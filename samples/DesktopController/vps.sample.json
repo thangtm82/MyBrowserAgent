@@ -1,0 +1,6 @@
+[
+  { "Name": "VPS01", "BaseUrl": "http://10.0.0.11:5050/", "ApiKey": "key-vps01" },
+  { "Name": "VPS02", "BaseUrl": "http://10.0.0.12:5050/", "ApiKey": "key-vps02" },
+  { "Name": "VPS03", "BaseUrl": "http://10.0.0.13:5050/", "ApiKey": "key-vps03" },
+  { "Name": "VPS04", "BaseUrl": "http://10.0.0.14:5050/", "ApiKey": "key-vps04" }
+]

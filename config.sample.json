@@ -1,0 +1,11 @@
+{
+  "Port": 5050,
+  "ApiKey": "replace-with-a-long-random-key",
+  "ChromeDriverDirectory": "driver",
+  "ChromeProfileDirectory": "ChromeProfile",
+  "ChromeBinary": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "Headless": false,
+  "AutoStartBrowser": true,
+  "PageLoadTimeoutSeconds": 60,
+  "ImplicitWaitSeconds": 1
+}
