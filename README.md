@@ -216,6 +216,9 @@ Main endpoints:
 | POST | `/api/browser/back` | Browser back |
 | POST | `/api/browser/forward` | Browser forward |
 | POST | `/api/browser/refresh` | Browser refresh |
+| POST | `/api/amazon-ads/account-info` | Fetch and parse Amazon Ads account data |
+
+See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md) for the request fields and a .NET Framework desktop example.
 
 ### Selector types
 
