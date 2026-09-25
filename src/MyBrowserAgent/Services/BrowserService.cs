@@ -134,6 +134,49 @@ namespace MyBrowserAgent.Services
             lock (_sync) return FindElement(selector, selectorType).GetAttribute(attribute);
         }
 
+        public string ReadPageSourceInTemporaryTab(string url, Func<string, bool> ready, int timeoutSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("Url is required.", nameof(url));
+            if (ready == null) throw new ArgumentNullException(nameof(ready));
+            if (timeoutSeconds < 0) throw new ArgumentOutOfRangeException(nameof(timeoutSeconds));
+
+            lock (_sync)
+            {
+                var driver = Driver;
+                var original = driver.CurrentWindowHandle;
+                string temporary = null;
+                try
+                {
+                    var before = driver.WindowHandles.ToList();
+                    ((IJavaScriptExecutor)driver).ExecuteScript("window.open('about:blank','_blank');");
+                    temporary = driver.WindowHandles.Except(before).Single();
+                    driver.SwitchTo().Window(temporary);
+                    driver.Navigate().GoToUrl(url);
+
+                    var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+                    string source;
+                    do
+                    {
+                        source = driver.PageSource;
+                        if (ready(source)) return source;
+                        if (DateTime.UtcNow >= deadline) break;
+                        Thread.Sleep(250);
+                    } while (true);
+                    return source;
+                }
+                finally
+                {
+                    if (temporary != null && driver.WindowHandles.Contains(temporary))
+                    {
+                        driver.SwitchTo().Window(temporary);
+                        driver.Close();
+                    }
+                    if (driver.WindowHandles.Contains(original))
+                        driver.SwitchTo().Window(original);
+                }
+            }
+        }
+
         public string GetHtml()
         {
             lock (_sync) return Driver.PageSource;
