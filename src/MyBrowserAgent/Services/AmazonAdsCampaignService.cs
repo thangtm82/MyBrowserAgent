@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Threading;
 using MyBrowserAgent.Models;
 using Newtonsoft.Json;
@@ -85,6 +87,8 @@ namespace MyBrowserAgent.Services
             var payload = BuildPayload(filter, info.GlobalAccountId);
             var campaigns = new List<JObject>();
             var seenTokens = new HashSet<string>(StringComparer.Ordinal);
+            var logRunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture) +
+                "-" + Guid.NewGuid().ToString("N");
             var deadline = DateTime.UtcNow.AddMinutes(8);
             var timeout = driver.Manage().Timeouts();
             var originalTimeout = timeout.AsynchronousJavaScript;
@@ -95,7 +99,7 @@ namespace MyBrowserAgent.Services
                 {
                     if (DateTime.UtcNow >= deadline)
                         throw new InvalidOperationException("Amazon Ads campaign pagination exceeded eight minutes.");
-                    var report = FetchPage(driver, headers, payload);
+                    var report = FetchPage(driver, headers, payload, logRunId, page + 1);
                     var rows = report["data"] as JArray;
                     if (rows == null)
                         throw new InvalidOperationException("Amazon Ads report is missing report.data.");
@@ -141,7 +145,8 @@ namespace MyBrowserAgent.Services
             throw new InvalidOperationException("Amazon Ads account fields are missing; check the Chrome login or page format.");
         }
 
-        private static JObject FetchPage(IWebDriver driver, IDictionary<string, string> headers, JObject payload)
+        private static JObject FetchPage(IWebDriver driver, IDictionary<string, string> headers,
+            JObject payload, string logRunId, int page)
         {
             var raw = ((IJavaScriptExecutor)driver).ExecuteAsyncScript(
                 FetchScript, headers, payload.ToString(Formatting.None)) as string;
@@ -149,12 +154,31 @@ namespace MyBrowserAgent.Services
                 throw new InvalidOperationException("Amazon Ads returned no JavaScript result.");
 
             var result = JObject.Parse(raw);
+            LogResponse(result, logRunId, page);
             if (result.Value<bool?>("ok") != true)
                 throw new InvalidOperationException("Amazon Ads request failed (HTTP " +
                     (result.Value<int?>("status")?.ToString() ?? "unavailable") + "). Check login and account access.");
             var response = JObject.Parse(result.Value<string>("body") ?? "");
             return response["report"] as JObject ??
                 throw new InvalidOperationException("Amazon Ads response is missing report.");
+        }
+
+        private static void LogResponse(JObject result, string logRunId, int page)
+        {
+            var directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+            Directory.CreateDirectory(directory);
+            var filename = "amazon-ads-campaigns-" + logRunId + "-page-" +
+                page.ToString(CultureInfo.InvariantCulture) + ".log";
+            var content = "TimestampUtc: " + DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) +
+                Environment.NewLine + "Page: " + page.ToString(CultureInfo.InvariantCulture) +
+                Environment.NewLine + "HttpStatus: " +
+                (result.Value<int?>("status")?.ToString(CultureInfo.InvariantCulture) ?? "unavailable") +
+                Environment.NewLine + "ResponseBody:" + Environment.NewLine +
+                (result.Value<string>("body") ?? "") + Environment.NewLine;
+            var error = result.Value<string>("error");
+            if (!string.IsNullOrEmpty(error))
+                content += "JavaScriptError: " + error + Environment.NewLine;
+            File.WriteAllText(Path.Combine(directory, filename), content, new UTF8Encoding(false));
         }
 
         private static JObject BuildPayload(CampaignFilterRequest filter, string accountId)

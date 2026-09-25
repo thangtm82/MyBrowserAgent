@@ -16,6 +16,8 @@ The API applies the conditions from `filterCamp.txt`: state `ENABLED` or `PAUSED
 
 The response follows the usual `ApiResult` envelope. `Data` is the array from `report.data`; each campaign retains all fields provided by Amazon Ads, including `campaignId`, `campaignName`, `acos`, `spend`, and `sales`. A successful filter with no matches returns `[]`. The Agent follows a `tokenPagination.nextToken` continuation when present. If Amazon Ads does not return a continuation token, the Agent returns the rows in `report.data`; `numberOfRecords` alone is not used to infer that another page exists.
 
+Each call writes the complete, unmodified response body from every Amazon Ads report page to a separate log file on the Agent VPS. For example, if the Agent runs at `C:\\BrowserAgent\\MyBrowserAgent.exe`, look in `C:\\BrowserAgent\\logs\\amazon-ads-campaigns-<UTC timestamp>-<run ID>-page-1.log`. The file contains a UTC timestamp, page number, HTTP status, and `ResponseBody:` with the raw Amazon response (including `numberOfRecords`, `data`, and pagination fields). HTTP error responses are logged before the request raises an error. Request headers and cookies are not written. These files contain campaign and account data, so keep them private and delete them when no longer needed.
+
 Desktop example (.NET Framework 4.7.2):
 
 ```csharp
