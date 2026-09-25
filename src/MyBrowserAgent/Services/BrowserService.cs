@@ -136,9 +136,28 @@ namespace MyBrowserAgent.Services
 
         public string ReadPageSourceInTemporaryTab(string url, Func<string, bool> ready, int timeoutSeconds)
         {
-            if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("Url is required.", nameof(url));
             if (ready == null) throw new ArgumentNullException(nameof(ready));
             if (timeoutSeconds < 0) throw new ArgumentOutOfRangeException(nameof(timeoutSeconds));
+
+            return RunInTemporaryTab(url, driver =>
+            {
+                var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+                string source;
+                do
+                {
+                    source = driver.PageSource;
+                    if (ready(source)) return source;
+                    if (DateTime.UtcNow >= deadline) break;
+                    Thread.Sleep(250);
+                } while (true);
+                return source;
+            });
+        }
+
+        public T RunInTemporaryTab<T>(string url, Func<IWebDriver, T> action)
+        {
+            if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("Url is required.", nameof(url));
+            if (action == null) throw new ArgumentNullException(nameof(action));
 
             lock (_sync)
             {
@@ -152,17 +171,7 @@ namespace MyBrowserAgent.Services
                     temporary = driver.WindowHandles.Except(before).Single();
                     driver.SwitchTo().Window(temporary);
                     driver.Navigate().GoToUrl(url);
-
-                    var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-                    string source;
-                    do
-                    {
-                        source = driver.PageSource;
-                        if (ready(source)) return source;
-                        if (DateTime.UtcNow >= deadline) break;
-                        Thread.Sleep(250);
-                    } while (true);
-                    return source;
+                    return action(driver);
                 }
                 finally
                 {

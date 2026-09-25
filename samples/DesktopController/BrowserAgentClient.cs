@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace DesktopController
 {
@@ -18,7 +22,7 @@ namespace DesktopController
             _http = new HttpClient
             {
                 BaseAddress = new Uri(baseUrl),
-                Timeout = TimeSpan.FromMinutes(2)
+                Timeout = Timeout.InfiniteTimeSpan
             };
             _http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
         }
@@ -39,6 +43,21 @@ namespace DesktopController
         public async Task<AmazonAdsAccountInfo> GetAmazonAdsAccountInfoAsync()
         {
             var response = await SendAsync<AmazonAdsAccountInfo>(HttpMethod.Post, "api/amazon-ads/account-info", null);
+            return response.Data;
+        }
+
+        public async Task<IList<JObject>> FilterCampaignsAsync(string targetType, decimal minAcos,
+            decimal maxAcos, DateTime startDate, DateTime endDate)
+        {
+            var response = await SendAsync<List<JObject>>(HttpMethod.Post, "api/amazon-ads/campaigns/filter",
+                new
+                {
+                    TargetType = targetType,
+                    MinAcos = minAcos,
+                    MaxAcos = maxAcos,
+                    StartDate = startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    EndDate = endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+                }, TimeSpan.FromMinutes(10));
             return response.Data;
         }
 
@@ -83,8 +102,9 @@ namespace DesktopController
             await SendAsync<object>(method, path, body);
         }
 
-        private async Task<ApiResponse<T>> SendAsync<T>(HttpMethod method, string path, object body)
+        private async Task<ApiResponse<T>> SendAsync<T>(HttpMethod method, string path, object body, TimeSpan? requestTimeout = null)
         {
+            using (var timeout = new CancellationTokenSource(requestTimeout ?? TimeSpan.FromMinutes(2)))
             using (var request = new HttpRequestMessage(method, path))
             {
                 if (body != null)
@@ -93,7 +113,7 @@ namespace DesktopController
                     request.Content = new StringContent(json, Encoding.UTF8, "application/json");
                 }
 
-                using (var response = await _http.SendAsync(request))
+                using (var response = await _http.SendAsync(request, timeout.Token))
                 {
                     var json = await response.Content.ReadAsStringAsync();
                     if (!response.IsSuccessStatusCode)

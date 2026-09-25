@@ -13,6 +13,33 @@ namespace MyBrowserAgent.Controllers
     public sealed class AmazonAdsController : ApiController
     {
         private readonly AmazonAdsAccountInfoService _service = new AmazonAdsAccountInfoService();
+        private readonly AmazonAdsCampaignService _campaigns = new AmazonAdsCampaignService();
+
+        [HttpPost, Route("campaigns/filter")]
+        public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
+        {
+            try
+            {
+                var rows = _campaigns.Filter(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(rows));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Amazon Ads returned invalid report JSON."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
 
         [HttpPost, Route("account-info")]
         public IHttpActionResult AccountInfo()
