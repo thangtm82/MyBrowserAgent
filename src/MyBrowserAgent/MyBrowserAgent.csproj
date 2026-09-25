@@ -10,7 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Web" />
     <PackageReference Include="Microsoft.AspNet.WebApi.OwinSelfHost" Version="5.3.0" />
     <PackageReference Include="Microsoft.Owin.Host.HttpListener" Version="4.2.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

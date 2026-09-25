@@ -216,9 +216,9 @@ Main endpoints:
 | POST | `/api/browser/back` | Browser back |
 | POST | `/api/browser/forward` | Browser forward |
 | POST | `/api/browser/refresh` | Browser refresh |
-| POST | `/api/amazon-ads/account-info` | Fetch and parse Amazon Ads account data |
+| POST | `/api/amazon-ads/account-info` | Read Amazon Ads account data from the Selenium Chrome session |
 
-See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md) for the request fields and a .NET Framework desktop example.
+See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md) for a .NET Framework desktop example.
 
 ### Selector types
 

@@ -1,12 +1,5 @@
 namespace MyBrowserAgent.Models
 {
-    public sealed class AmazonAdsAccountInfoRequest
-    {
-        public string EndpointUrl { get; set; }
-        public string EntityId { get; set; }
-        public string Cookies { get; set; }
-    }
-
     public sealed class AmazonAdsAccountInfo
     {
         public string Token { get; set; }
