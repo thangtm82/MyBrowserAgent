@@ -109,12 +109,7 @@ namespace MyBrowserAgent.Services
                     var pagination = report["tokenPagination"] as JObject;
                     var nextToken = pagination?.Value<string>("nextToken") ?? pagination?.Value<string>("token");
                     if (string.IsNullOrEmpty(nextToken))
-                    {
-                        var count = report.Value<int?>("numberOfRecords");
-                        if (page == 0 && count > campaigns.Count)
-                            throw new InvalidOperationException("Amazon Ads returned fewer campaigns than reported, without a continuation token.");
                         return campaigns;
-                    }
                     if (!seenTokens.Add(nextToken))
                         throw new InvalidOperationException("Amazon Ads repeated a campaign pagination token.");
 
