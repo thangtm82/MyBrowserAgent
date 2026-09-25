@@ -111,14 +111,15 @@ namespace MyBrowserAgent.Services
                     }
 
                     var pagination = report["tokenPagination"] as JObject;
-                    var nextToken = pagination?.Value<string>("nextToken") ?? pagination?.Value<string>("token");
+                    var nextToken = pagination?.Value<string>("nextPageToken") ??
+                        pagination?.Value<string>("nextToken") ?? pagination?.Value<string>("token");
                     if (string.IsNullOrEmpty(nextToken))
                         return campaigns;
                     if (!seenTokens.Add(nextToken))
                         throw new InvalidOperationException("Amazon Ads repeated a campaign pagination token.");
 
                     var requestPagination = (JObject)payload["reportConfig"]["tokenPagination"];
-                    requestPagination["nextToken"] = nextToken;
+                    requestPagination["nextPageToken"] = nextToken;
                 }
                 throw new InvalidOperationException("Amazon Ads campaign pagination exceeded 100 pages.");
             }
