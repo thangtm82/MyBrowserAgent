@@ -26,6 +26,6 @@ using (var agent = new BrowserAgentClient("VPS01", "http://10.0.0.11:5050/", "YO
 }
 ```
 
-The response uses the usual `ApiResult` envelope. `Data` contains `Token`, `TraceId`, `SegmentId`, `ClientId`, `CsrfToken`, `SessionId`, `PageHitRequestId`, `AdvertiserId`, and `EntityId`. A field missing from the returned HTML is `null`. If the page has none of the identifying fields, the endpoint returns an error so an expired login does not look like a successful extraction.
+The response uses the usual `ApiResult` envelope. `Data` contains `Token`, `TraceId`, `SegmentId`, `ClientId`, `CsrfToken`, `SessionId`, `PageHitRequestId`, `AdvertiserId`, and `EntityId`. A field missing from the returned HTML is omitted from the JSON response (and is `null` in the C# DTO). If the page has none of the identifying fields, the endpoint returns an error so an expired login does not look like a successful extraction.
 
 The `Cookies` field is a Cookie header string, not the JSON result of `/api/browser/cookies`. Use the cookies of the logged-in Amazon Ads session for the target domain. Keep the API on a private network and avoid logging request bodies or responses: both contain session credentials. The request is subject to a 30-second timeout and does not follow redirects.
