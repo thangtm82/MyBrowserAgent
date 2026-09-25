@@ -26,6 +26,7 @@ namespace DesktopController
         public string AdvertiserId { get; set; }
         public string EntityId { get; set; }
         public string GlobalAccountId { get; set; }
+        public string MarketplaceId { get; set; }
     }
 
     public sealed class AgentStatus

@@ -40,7 +40,8 @@ namespace MyBrowserAgent.Services
                 PageHitRequestId = Read(html, "pageHitRequestId"),
                 AdvertiserId = Read(html, "advertiserId"),
                 EntityId = Read(html, "entityId"),
-                GlobalAccountId = Read(html, "globalAccountId")
+                GlobalAccountId = Read(html, "globalAccountId"),
+                MarketplaceId = Read(html, "marketplaceId")
             };
         }
 
