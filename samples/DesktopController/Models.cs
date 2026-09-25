@@ -25,6 +25,7 @@ namespace DesktopController
         public string PageHitRequestId { get; set; }
         public string AdvertiserId { get; set; }
         public string EntityId { get; set; }
+        public string GlobalAccountId { get; set; }
     }
 
     public sealed class AgentStatus

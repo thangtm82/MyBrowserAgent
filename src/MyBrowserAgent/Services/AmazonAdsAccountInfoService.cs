@@ -39,7 +39,8 @@ namespace MyBrowserAgent.Services
                 SessionId = Read(html, "sessionId"),
                 PageHitRequestId = Read(html, "pageHitRequestId"),
                 AdvertiserId = Read(html, "advertiserId"),
-                EntityId = Read(html, "entityId")
+                EntityId = Read(html, "entityId"),
+                GlobalAccountId = Read(html, "globalAccountId")
             };
         }
 
