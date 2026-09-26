@@ -195,7 +195,7 @@ Main endpoints:
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/browser/status` | Browser/agent status |
-| POST | `/api/browser/start` | Start Chrome |
+| POST | `/api/browser/start` | Start Chrome; recover from a profile conflict by closing Chrome using this Agent's profile and retrying once |
 | POST | `/api/browser/stop` | Stop Chrome |
 | POST | `/api/browser/open` | Navigate to URL |
 | POST | `/api/browser/click` | Click an element |
@@ -352,7 +352,7 @@ ChromeProfile
 
 Login state, cookies and local storage can therefore persist across BrowserAgent restarts.
 
-Do not open the same Chrome profile concurrently from another Chrome process while Selenium is using it.
+Do not open the same Chrome profile concurrently from another Chrome process while Selenium is using it. If startup fails with a `DevToolsActivePort` or profile-in-use error and a running `chrome.exe` has this exact `--user-data-dir`, the Agent closes that Chrome process and retries once. Other Chrome profiles are left alone. Any unsaved tabs in the Agent profile will be closed; the on-disk profile and login data remain in place. If no matching Chrome process is found or the retry fails, the API reports the error.
 
 ## Security
 

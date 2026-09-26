@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Threading;
+using System.Text.RegularExpressions;
 using MyBrowserAgent.Configuration;
 using MyBrowserAgent.Models;
 using OpenQA.Selenium;
@@ -15,6 +18,9 @@ namespace MyBrowserAgent.Services
         private readonly AgentConfig _config;
         private readonly object _sync = new object();
         private ChromeDriver _driver;
+        private static readonly Regex ProfileArgument = new Regex(
+            @"(?:^|\s)(?:""--user-data-dir=(?<whole>[^""]+)""|--user-data-dir=(?:""(?<quoted>[^""]+)""|(?<plain>[^\s""]+)))",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         public BrowserService(AgentConfig config)
         {
@@ -30,7 +36,18 @@ namespace MyBrowserAgent.Services
         {
             lock (_sync)
             {
-                if (_driver != null) return;
+                if (_driver != null)
+                {
+                    try
+                    {
+                        var handle = _driver.CurrentWindowHandle;
+                        return;
+                    }
+                    catch (WebDriverException)
+                    {
+                        Stop();
+                    }
+                }
 
                 Directory.CreateDirectory(_config.ChromeDriverDirectory);
                 Directory.CreateDirectory(_config.ChromeProfileDirectory);
@@ -61,22 +78,123 @@ namespace MyBrowserAgent.Services
                     options.AddArgument("--window-size=1920,1080");
                 }
 
-                var service = ChromeDriverService.CreateDefaultService(_config.ChromeDriverDirectory);
-                service.HideCommandPromptWindow = true;
-
                 try
                 {
-                    _driver = new ChromeDriver(service, options, TimeSpan.FromSeconds(120));
-                    _driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(_config.PageLoadTimeoutSeconds);
-                    _driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(_config.ImplicitWaitSeconds);
+                    _driver = CreateDriver(options);
                 }
-                catch
+                catch (WebDriverException startupError) when (IsProfileStartupFailure(startupError))
                 {
-                    try { service.Dispose(); } catch { }
-                    _driver = null;
-                    throw;
+                    int closed;
+                    try
+                    {
+                        closed = CloseChromeUsingProfile(_config.ChromeProfileDirectory);
+                    }
+                    catch (Exception cleanupError)
+                    {
+                        throw new InvalidOperationException(
+                            "Chrome could not start and the Agent could not close the Chrome process using its profile.",
+                            new AggregateException(startupError, cleanupError));
+                    }
+
+                    if (closed == 0) throw;
+                    Console.WriteLine("Closed " + closed + " Chrome process(es) using the Agent profile. Retrying startup.");
+                    Thread.Sleep(500);
+                    _driver = CreateDriver(options);
                 }
             }
+        }
+
+        private ChromeDriver CreateDriver(ChromeOptions options)
+        {
+            var service = ChromeDriverService.CreateDefaultService(_config.ChromeDriverDirectory);
+            service.HideCommandPromptWindow = true;
+            ChromeDriver driver = null;
+            try
+            {
+                driver = new ChromeDriver(service, options, TimeSpan.FromSeconds(120));
+                driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(_config.PageLoadTimeoutSeconds);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(_config.ImplicitWaitSeconds);
+                return driver;
+            }
+            catch
+            {
+                try { driver?.Quit(); } catch { }
+                try { driver?.Dispose(); } catch { }
+                try { service.Dispose(); } catch { }
+                throw;
+            }
+        }
+
+        private static bool IsProfileStartupFailure(WebDriverException error)
+        {
+            var message = error.ToString();
+            return message.IndexOf("DevToolsActivePort", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("user data directory is already in use", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static int CloseChromeUsingProfile(string profileDirectory)
+        {
+            var profile = Path.GetFullPath(profileDirectory).TrimEnd('\\', '/');
+            var matchingPids = new List<int>();
+
+            using (var searcher = new ManagementObjectSearcher(
+                "SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name = 'chrome.exe'"))
+            using (var processes = searcher.Get())
+            {
+                foreach (ManagementObject process in processes)
+                {
+                    using (process)
+                    {
+                        var commandLine = process["CommandLine"] as string;
+                        if (UsesProfile(commandLine, profile))
+                            matchingPids.Add(Convert.ToInt32(process["ProcessId"]));
+                    }
+                }
+            }
+
+            var closed = 0;
+            foreach (var pid in matchingPids)
+            {
+                Process process;
+                try { process = Process.GetProcessById(pid); }
+                catch (ArgumentException) { continue; }
+
+                using (process)
+                {
+                    if (process.HasExited) continue;
+                    if (process.CloseMainWindow())
+                        process.WaitForExit(3000);
+                    if (!process.HasExited)
+                    {
+                        process.Kill();
+                        if (!process.WaitForExit(5000))
+                            throw new InvalidOperationException("Chrome using the Agent profile did not exit.");
+                    }
+                    closed++;
+                }
+            }
+
+            return closed;
+        }
+
+        private static bool UsesProfile(string commandLine, string profile)
+        {
+            if (string.IsNullOrEmpty(commandLine)) return false;
+            foreach (Match match in ProfileArgument.Matches(commandLine))
+            {
+                var value = match.Groups["whole"].Success ? match.Groups["whole"].Value :
+                    match.Groups["quoted"].Success ? match.Groups["quoted"].Value :
+                    match.Groups["plain"].Value;
+                try
+                {
+                    var path = Path.GetFullPath(value).TrimEnd('\\', '/');
+                    if (string.Equals(path, profile, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+                catch (ArgumentException) { }
+                catch (NotSupportedException) { }
+            }
+            return false;
         }
 
         public object GetStatus()
