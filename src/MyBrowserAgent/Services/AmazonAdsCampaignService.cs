@@ -119,6 +119,8 @@ namespace MyBrowserAgent.Services
                         throw new InvalidOperationException("Amazon Ads repeated a campaign pagination token.");
 
                     var requestPagination = (JObject)payload["reportConfig"]["tokenPagination"];
+                    // Match the browser's next-page request: both fields carry the response token.
+                    requestPagination["nextToken"] = nextToken;
                     requestPagination["nextPageToken"] = nextToken;
                 }
                 throw new InvalidOperationException("Amazon Ads campaign pagination exceeded 100 pages.");
