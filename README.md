@@ -218,7 +218,7 @@ Main endpoints:
 | POST | `/api/browser/refresh` | Browser refresh |
 | POST | `/api/amazon-ads/account-info` | Read Amazon Ads account data from the Selenium Chrome session |
 | POST | `/api/amazon-ads/campaigns/filter` | Filter campaigns with in-browser Amazon Ads fetch |
-| POST | `/api/amazon-ads/targets/filter` | Filter targets and collect offset-paginated report pages |
+| POST | `/api/amazon-ads/targets/filter` | Return one target report page at the client-supplied offset (50 rows maximum) |
 
 See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), and [target filtering](docs/AmazonAdsTargetFilter.md) for .NET Framework desktop examples.
 

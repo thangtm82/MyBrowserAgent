@@ -51,10 +51,10 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            return browser.RunInTemporaryTab(CampaignUrl, driver => FetchAll(driver, filter));
+            return browser.RunInTemporaryTab(CampaignUrl, driver => FetchOnePage(driver, filter));
         }
 
-        private static IList<JObject> FetchAll(IWebDriver driver, TargetFilterRequest filter)
+        private static IList<JObject> FetchOnePage(IWebDriver driver, TargetFilterRequest filter)
         {
             var info = WaitForAccountInfo(driver);
             var headers = new Dictionary<string, string>
@@ -78,54 +78,30 @@ namespace MyBrowserAgent.Services
                     ";Parent=" + info.SegmentId + ";Sampled=1";
 
             var payload = BuildPayload(filter);
-            var targets = new List<JObject>();
-            var offset = filter.Offset;
-            int? totalRecords = null;
             var logRunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture) +
                 "-" + Guid.NewGuid().ToString("N");
-            var deadline = DateTime.UtcNow.AddMinutes(8);
             var timeouts = driver.Manage().Timeouts();
             var originalTimeout = timeouts.AsynchronousJavaScript;
             try
             {
                 timeouts.AsynchronousJavaScript = TimeSpan.FromSeconds(60);
-                for (var page = 0; page < 100; page++)
+                var report = FetchPage(driver, headers, payload, logRunId, 1);
+                var rows = report["data"] as JArray;
+                if (rows == null)
+                    throw new InvalidOperationException("Amazon Ads target report is missing report.data.");
+
+                var returnedOffset = (report["offsetPagination"] as JObject)?.Value<int?>("offset");
+                if (returnedOffset.HasValue && returnedOffset.Value != filter.Offset.Value)
+                    throw new InvalidOperationException("Amazon Ads returned an unexpected target page offset.");
+
+                var targets = new List<JObject>(rows.Count);
+                foreach (var row in rows)
                 {
-                    if (DateTime.UtcNow >= deadline)
-                        throw new InvalidOperationException("Amazon Ads target pagination exceeded eight minutes.");
-                    var report = FetchPage(driver, headers, payload, logRunId, page + 1);
-                    var rows = report["data"] as JArray;
-                    if (rows == null)
-                        throw new InvalidOperationException("Amazon Ads target report is missing report.data.");
-
-                    var returnedOffset = (report["offsetPagination"] as JObject)?.Value<int?>("offset");
-                    if (returnedOffset.HasValue && returnedOffset.Value != offset)
-                        throw new InvalidOperationException("Amazon Ads returned an unexpected target page offset.");
-                    totalRecords = report.Value<int?>("numberOfRecords") ?? totalRecords;
-
-                    if (rows.Count == 0)
-                    {
-                        if (totalRecords.HasValue && offset < totalRecords.Value)
-                            throw new InvalidOperationException("Amazon Ads returned an empty target page before the end of the report.");
-                        return targets;
-                    }
-                    foreach (var row in rows)
-                    {
-                        if (!(row is JObject target))
-                            throw new InvalidOperationException("Amazon Ads returned an invalid target row.");
-                        targets.Add(target);
-                    }
-
-                    var nextOffset = checked(offset + rows.Count);
-                    if (totalRecords.HasValue && nextOffset >= totalRecords.Value)
-                        return targets;
-                    if (!totalRecords.HasValue && rows.Count < PageSize)
-                        return targets;
-
-                    offset = nextOffset;
-                    ((JObject)payload["reportConfig"]["offsetPagination"])["offset"] = offset;
+                    if (!(row is JObject target))
+                        throw new InvalidOperationException("Amazon Ads returned an invalid target row.");
+                    targets.Add(target);
                 }
-                throw new InvalidOperationException("Amazon Ads target pagination exceeded 100 pages.");
+                return targets;
             }
             finally
             {
@@ -204,7 +180,7 @@ namespace MyBrowserAgent.Services
                     ["startDate"] = filter.StartDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["endDate"] = filter.EndDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["timeUnits"] = new JArray("SUMMARY", "DAILY"),
-                    ["offsetPagination"] = new JObject { ["size"] = PageSize, ["offset"] = filter.Offset },
+                    ["offsetPagination"] = new JObject { ["size"] = PageSize, ["offset"] = filter.Offset.Value },
                     ["currencyOfView"] = "USD",
                     ["sort"] = new JObject { ["sortField"] = "spendCoV", ["sortOrder"] = "DESC" }
                 }
@@ -219,8 +195,8 @@ namespace MyBrowserAgent.Services
                 throw new ArgumentException("MinAcos and MaxAcos must be nonnegative and MinAcos <= MaxAcos.");
             if (!filter.StartDate.HasValue || !filter.EndDate.HasValue || filter.StartDate > filter.EndDate)
                 throw new ArgumentException("StartDate and EndDate are required and StartDate must be <= EndDate.");
-            if (filter.Offset < 0)
-                throw new ArgumentException("Offset must be nonnegative.");
+            if (!filter.Offset.HasValue || filter.Offset.Value < 0)
+                throw new ArgumentException("Offset is required and must be nonnegative.");
         }
     }
 }

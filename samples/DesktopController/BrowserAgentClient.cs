@@ -62,7 +62,7 @@ namespace DesktopController
         }
 
         public async Task<IList<JObject>> FilterTargetsAsync(decimal minAcos, decimal maxAcos,
-            DateTime startDate, DateTime endDate, int offset = 0)
+            DateTime startDate, DateTime endDate, int offset)
         {
             var response = await SendAsync<List<JObject>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
                 new
@@ -72,7 +72,7 @@ namespace DesktopController
                     StartDate = startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     EndDate = endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     Offset = offset
-                }, TimeSpan.FromMinutes(10));
+                }, TimeSpan.FromMinutes(3));
             return response.Data;
         }
 

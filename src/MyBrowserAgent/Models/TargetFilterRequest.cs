@@ -8,6 +8,6 @@ namespace MyBrowserAgent.Models
         public decimal? MaxAcos { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public int Offset { get; set; }
+        public int? Offset { get; set; }
     }
 }
