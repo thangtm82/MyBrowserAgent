@@ -36,3 +36,5 @@ Console.WriteLine(info.GlobalAccountId);
 ```
 
 This creates a fresh Selenium browser session, while using the stored Amazon Ads login from the same Chrome profile. It does not create a new Amazon user account.
+
+Use the `AmazonAdsAccountInfo` returned by `start-session` (or `account-info`) as the first argument to the desktop client's campaign filter, target filter, and bid update methods. The Agent uses its required fields as Amazon Ads headers and Chrome supplies cookies. If the Chrome session or selected account changes, request fresh account info.

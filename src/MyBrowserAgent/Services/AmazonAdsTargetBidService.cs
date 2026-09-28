@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 using MyBrowserAgent.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -45,20 +44,22 @@ namespace MyBrowserAgent.Services
                 ["bid"] = request.Bid.Value.ToString(CultureInfo.InvariantCulture)
             });
             return browser.RunInTemporaryTab(CampaignUrl,
-                driver => UpdateInBrowser(driver, body, targetId));
+                driver => UpdateInBrowser(driver, body, targetId, request.AccountInfo));
         }
 
-        public JObject UpdateMany(BrowserService browser, IList<TargetBidUpdateItem> requests)
+        public JObject UpdateMany(BrowserService browser, TargetBidBulkUpdateRequest request)
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
-            var body = BuildManyPayload(requests);
+            if (request == null) throw new ArgumentException("Request body is required.");
+            AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+            var body = BuildManyPayload(request.Targets);
             return browser.RunInTemporaryTab(CampaignUrl,
-                driver => UpdateInBrowser(driver, body, null));
+                driver => UpdateInBrowser(driver, body, null, request.AccountInfo));
         }
 
-        private static JObject UpdateInBrowser(IWebDriver driver, JArray body, string singleTargetId)
+        private static JObject UpdateInBrowser(IWebDriver driver, JArray body,
+            string singleTargetId, AmazonAdsAccountInfo info)
         {
-            var info = WaitForAccountInfo(driver);
             var headers = new Dictionary<string, string>
             {
                 ["accept"] = "application/json",
@@ -136,22 +137,6 @@ namespace MyBrowserAgent.Services
                     "Amazon Ads did not confirm a successful bid update for target " + targetId + ".");
         }
 
-        private static AmazonAdsAccountInfo WaitForAccountInfo(IWebDriver driver)
-        {
-            var deadline = DateTime.UtcNow.AddSeconds(15);
-            do
-            {
-                var info = AmazonAdsAccountInfoService.Parse(driver.PageSource);
-                if (!string.IsNullOrEmpty(info.EntityId) && !string.IsNullOrEmpty(info.ClientId) &&
-                    !string.IsNullOrEmpty(info.CsrfToken) && !string.IsNullOrEmpty(info.GlobalAccountId) &&
-                    !string.IsNullOrEmpty(info.MarketplaceId))
-                    return info;
-                if (DateTime.UtcNow >= deadline) break;
-                Thread.Sleep(250);
-            } while (true);
-            throw new InvalidOperationException("Amazon Ads account fields are missing; check the Chrome login or page format.");
-        }
-
         private static JArray BuildManyPayload(IList<TargetBidUpdateItem> requests)
         {
             if (requests == null || requests.Count == 0)
@@ -194,6 +179,7 @@ namespace MyBrowserAgent.Services
         private static void Validate(TargetBidUpdateRequest request)
         {
             if (request == null) throw new ArgumentException("Request body is required.");
+            AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
             if (string.IsNullOrWhiteSpace(request.TargetId))
                 throw new ArgumentException("TargetId is required.");
             if (string.IsNullOrWhiteSpace(request.CountryCode))

@@ -1,11 +1,18 @@
 # Filter Amazon Ads campaigns
 
-`POST /api/amazon-ads/campaigns/filter` opens `https://advertising.amazon.com/cb` in a temporary Selenium tab, reads the account identifiers embedded in that page, and executes `fetch` from the page's own origin. Chrome supplies the logged-in cookies. The original tab is restored afterward.
+`POST /api/amazon-ads/campaigns/filter` uses the client-supplied `AccountInfo` for Amazon Ads headers and executes `fetch` in the signed-in Selenium Chrome session. Chrome supplies the logged-in cookies. When the current tab is on `campaign-manager`, the Agent reuses it; otherwise it uses a temporary `/cb` tab.
 
 The API applies the conditions from `filterCamp.txt`: state `ENABLED` or `PAUSED`, the requested `campaignTargetingType`, an inclusive ACoS range, and program type `SP` or `SPONSORED_ADS_RETAILERS`. Dates are inclusive calendar dates in `yyyy-MM-dd` form. The campaign report retains the fields and sort order of the supplied request.
 
 ```json
 {
+  "AccountInfo": {
+    "EntityId": "ENTITY_ID",
+    "GlobalAccountId": "GLOBAL_ACCOUNT_ID",
+    "MarketplaceId": "ATVPDKIKX0DER",
+    "ClientId": "CLIENT_ID",
+    "CsrfToken": "CSRF_TOKEN"
+  },
   "TargetType": "AUTOMATIC",
   "MinAcos": 10,
   "MaxAcos": 40,
@@ -21,12 +28,13 @@ Each call writes the complete, unmodified response body from every Amazon Ads re
 Desktop example (.NET Framework 4.7.2):
 
 ```csharp
+var info = await agent.StartAmazonAdsSessionAsync();
 var campaigns = await agent.FilterCampaignsAsync(
-    "AUTOMATIC", 10, 40,
+    info, "AUTOMATIC", 10, 40,
     new DateTime(2026, 9, 1), new DateTime(2026, 9, 25));
 
 foreach (var campaign in campaigns)
     Console.WriteLine($"{campaign.Value<string>("campaignName")}: {campaign.Value<decimal?>("acos")}");
 ```
 
-An Amazon Ads session must already be signed in within the Agent's Chrome profile. The endpoint uses the same `X-Api-Key` as the rest of the Agent. It does not accept cookies or authentication fields from the Desktop client. The live response with 51 matching campaigns has 50 rows in the first page and a `nextPageToken`. The next request uses the token with the pagination fields shown above; each response page contributes its `report.data` rows to the returned list. If Amazon Ads omits a continuation token, the Agent returns only the rows received.
+An Amazon Ads session must already be signed in within the Agent's Chrome profile. The endpoint requires `AccountInfo` from that session, normally returned by `start-session`, and the usual `X-Api-Key`. The client supplies the account fields, while Chrome still supplies cookies. Do not log `AccountInfo` or send it over an untrusted network. The live response with 51 matching campaigns has 50 rows in the first page and a `nextPageToken`. The next request uses the token with the pagination fields shown above; each response page contributes its `report.data` rows to the returned list. If Amazon Ads omits a continuation token, the Agent returns only the rows received.

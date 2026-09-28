@@ -53,12 +53,14 @@ namespace DesktopController
             return response.Data;
         }
 
-        public async Task<IList<JObject>> FilterCampaignsAsync(string targetType, decimal minAcos,
-            decimal maxAcos, DateTime startDate, DateTime endDate)
+        public async Task<IList<JObject>> FilterCampaignsAsync(AmazonAdsAccountInfo accountInfo,
+            string targetType, decimal minAcos, decimal maxAcos,
+            DateTime startDate, DateTime endDate)
         {
             var response = await SendAsync<List<JObject>>(HttpMethod.Post, "api/amazon-ads/campaigns/filter",
                 new
                 {
+                    AccountInfo = accountInfo,
                     TargetType = targetType,
                     MinAcos = minAcos,
                     MaxAcos = maxAcos,
@@ -68,24 +70,26 @@ namespace DesktopController
             return response.Data;
         }
 
-        public Task<IList<JObject>> FilterTargetsAsync(decimal minAcos, decimal maxAcos,
-            DateTime startDate, DateTime endDate, int offset)
+        public Task<IList<JObject>> FilterTargetsAsync(AmazonAdsAccountInfo accountInfo,
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
         {
-            return FilterTargetsCoreAsync<JObject>(minAcos, maxAcos, startDate, endDate, offset);
+            return FilterTargetsCoreAsync<JObject>(accountInfo, minAcos, maxAcos, startDate, endDate, offset);
         }
 
-        public Task<IList<AmazonAdsTarget>> FilterTargetsTypedAsync(decimal minAcos, decimal maxAcos,
-            DateTime startDate, DateTime endDate, int offset)
+        public Task<IList<AmazonAdsTarget>> FilterTargetsTypedAsync(AmazonAdsAccountInfo accountInfo,
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
         {
-            return FilterTargetsCoreAsync<AmazonAdsTarget>(minAcos, maxAcos, startDate, endDate, offset);
+            return FilterTargetsCoreAsync<AmazonAdsTarget>(
+                accountInfo, minAcos, maxAcos, startDate, endDate, offset);
         }
 
-        private async Task<IList<T>> FilterTargetsCoreAsync<T>(decimal minAcos, decimal maxAcos,
-            DateTime startDate, DateTime endDate, int offset)
+        private async Task<IList<T>> FilterTargetsCoreAsync<T>(AmazonAdsAccountInfo accountInfo,
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
         {
             var response = await SendAsync<List<T>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
                 new
                 {
+                    AccountInfo = accountInfo,
                     MinAcos = minAcos,
                     MaxAcos = maxAcos,
                     StartDate = startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -96,20 +100,21 @@ namespace DesktopController
         }
 
         public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidAsync(
-            string targetId, string countryCode, decimal bid)
+            AmazonAdsAccountInfo accountInfo, string targetId, string countryCode, decimal bid)
         {
             var response = await SendAsync<AmazonAdsTargetBidUpdateResult>(
                 HttpMethod.Put, "api/amazon-ads/targets/bid",
-                new { TargetId = targetId, CountryCode = countryCode, Bid = bid },
+                new { AccountInfo = accountInfo, TargetId = targetId, CountryCode = countryCode, Bid = bid },
                 TimeSpan.FromMinutes(3));
             return response.Data;
         }
 
         public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidsAsync(
-            IList<AmazonAdsTargetBidUpdateItem> targets)
+            AmazonAdsAccountInfo accountInfo, IList<AmazonAdsTargetBidUpdateItem> targets)
         {
             var response = await SendAsync<AmazonAdsTargetBidUpdateResult>(
-                HttpMethod.Put, "api/amazon-ads/targets/bids", targets,
+                HttpMethod.Put, "api/amazon-ads/targets/bids",
+                new { AccountInfo = accountInfo, Targets = targets },
                 TimeSpan.FromMinutes(3));
             return response.Data;
         }

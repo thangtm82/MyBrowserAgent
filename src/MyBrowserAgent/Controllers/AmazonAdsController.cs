@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Web.Http;
@@ -101,11 +100,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPut, Route("targets/bids")]
-        public IHttpActionResult UpdateTargetBids([FromBody] IList<TargetBidUpdateItem> requests)
+        public IHttpActionResult UpdateTargetBids(TargetBidBulkUpdateRequest request)
         {
             try
             {
-                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, requests);
+                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request);
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)

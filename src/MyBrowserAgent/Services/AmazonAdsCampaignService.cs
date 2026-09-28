@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading;
 using MyBrowserAgent.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -64,7 +63,7 @@ namespace MyBrowserAgent.Services
 
         private static IList<JObject> FetchAll(IWebDriver driver, CampaignFilterRequest filter)
         {
-            var info = WaitForAccountInfo(driver);
+            var info = filter.AccountInfo;
             var headers = new Dictionary<string, string>
             {
                 ["accept"] = "application/json",
@@ -129,23 +128,6 @@ namespace MyBrowserAgent.Services
             {
                 timeout.AsynchronousJavaScript = originalTimeout;
             }
-        }
-
-        private static AmazonAdsAccountInfo WaitForAccountInfo(IWebDriver driver)
-        {
-            var deadline = DateTime.UtcNow.AddSeconds(15);
-            AmazonAdsAccountInfo info;
-            do
-            {
-                info = AmazonAdsAccountInfoService.Parse(driver.PageSource);
-                if (!string.IsNullOrEmpty(info.EntityId) && !string.IsNullOrEmpty(info.ClientId) &&
-                    !string.IsNullOrEmpty(info.CsrfToken) && !string.IsNullOrEmpty(info.GlobalAccountId) &&
-                    !string.IsNullOrEmpty(info.MarketplaceId))
-                    return info;
-                if (DateTime.UtcNow >= deadline) break;
-                Thread.Sleep(250);
-            } while (true);
-            throw new InvalidOperationException("Amazon Ads account fields are missing; check the Chrome login or page format.");
         }
 
         private static JObject FetchPage(IWebDriver driver, IDictionary<string, string> headers,
@@ -225,6 +207,7 @@ namespace MyBrowserAgent.Services
         private static void Validate(CampaignFilterRequest filter)
         {
             if (filter == null) throw new ArgumentException("Request body is required.");
+            AmazonAdsAccountInfoValidator.Validate(filter.AccountInfo);
             if (string.IsNullOrWhiteSpace(filter.TargetType)) throw new ArgumentException("TargetType is required.");
             if (!filter.MinAcos.HasValue || !filter.MaxAcos.HasValue ||
                 filter.MinAcos < 0 || filter.MinAcos > filter.MaxAcos)

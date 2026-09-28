@@ -4,6 +4,7 @@ namespace MyBrowserAgent.Models
 {
     public sealed class TargetFilterRequest
     {
+        public AmazonAdsAccountInfo AccountInfo { get; set; }
         public decimal? MinAcos { get; set; }
         public decimal? MaxAcos { get; set; }
         public DateTime? StartDate { get; set; }
