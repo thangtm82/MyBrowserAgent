@@ -19,13 +19,15 @@ Each call sends exactly one Amazon Ads request with `offsetPagination.size = 50`
 Desktop example (.NET Framework 4.7.2):
 
 ```csharp
-var targets = await agent.FilterTargetsAsync(
+IList<AmazonAdsTarget> targets = await agent.FilterTargetsTypedAsync(
     10, 40,
     new DateTime(2026, 9, 1), new DateTime(2026, 9, 28),
     offset: 0);
 
 foreach (var target in targets)
-    Console.WriteLine($"{target.Value<string>("targetId")}: {target.Value<decimal?>("acos")}");
+    Console.WriteLine($"{target.TargetId}: {target.Acos}");
 ```
+
+The DesktopController sample declares `AmazonAdsTarget` with all 41 fields from the supplied `responseTarget.txt`. `FilterTargetsTypedAsync` deserializes `ApiResult.Data` directly into `IList<AmazonAdsTarget>`. `FilterTargetsAsync` remains available when the caller wants the original `JObject` rows.
 
 The Agent writes the raw response for each API call under `logs\amazon-ads-targets-<UTC timestamp>-<run ID>-page-1.log` beside its executable. The log includes campaign and account data; keep it private. The API requires the usual `X-Api-Key`; it does not accept a Cookie header from the Desktop client.

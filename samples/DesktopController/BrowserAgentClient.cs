@@ -61,10 +61,22 @@ namespace DesktopController
             return response.Data;
         }
 
-        public async Task<IList<JObject>> FilterTargetsAsync(decimal minAcos, decimal maxAcos,
+        public Task<IList<JObject>> FilterTargetsAsync(decimal minAcos, decimal maxAcos,
             DateTime startDate, DateTime endDate, int offset)
         {
-            var response = await SendAsync<List<JObject>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
+            return FilterTargetsCoreAsync<JObject>(minAcos, maxAcos, startDate, endDate, offset);
+        }
+
+        public Task<IList<AmazonAdsTarget>> FilterTargetsTypedAsync(decimal minAcos, decimal maxAcos,
+            DateTime startDate, DateTime endDate, int offset)
+        {
+            return FilterTargetsCoreAsync<AmazonAdsTarget>(minAcos, maxAcos, startDate, endDate, offset);
+        }
+
+        private async Task<IList<T>> FilterTargetsCoreAsync<T>(decimal minAcos, decimal maxAcos,
+            DateTime startDate, DateTime endDate, int offset)
+        {
+            var response = await SendAsync<List<T>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
                 new
                 {
                     MinAcos = minAcos,
