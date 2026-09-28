@@ -221,6 +221,8 @@ Main endpoints:
 
 See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), and [target filtering](docs/AmazonAdsTargetFilter.md), and [target bid updates](docs/AmazonAdsTargetBidUpdate.md) for .NET Framework desktop examples.
 
+When the selected Selenium tab's URL starts with `https://advertising.amazon.com/campaign-manager`, Amazon Ads operations run on that tab and leave it open. From other pages, the Agent opens `/cb` in a temporary tab and restores the original tab afterward.
+
 ### Selector types
 
 The following selector types are supported:
