@@ -71,20 +71,24 @@ namespace DesktopController
         }
 
         public Task<IList<JObject>> FilterTargetsAsync(AmazonAdsAccountInfo accountInfo,
-            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
+            string matchType = null)
         {
-            return FilterTargetsCoreAsync<JObject>(accountInfo, minAcos, maxAcos, startDate, endDate, offset);
+            return FilterTargetsCoreAsync<JObject>(
+                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType);
         }
 
         public Task<IList<AmazonAdsTarget>> FilterTargetsTypedAsync(AmazonAdsAccountInfo accountInfo,
-            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
+            string matchType = null)
         {
             return FilterTargetsCoreAsync<AmazonAdsTarget>(
-                accountInfo, minAcos, maxAcos, startDate, endDate, offset);
+                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType);
         }
 
         private async Task<IList<T>> FilterTargetsCoreAsync<T>(AmazonAdsAccountInfo accountInfo,
-            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset)
+            decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
+            string matchType)
         {
             var response = await SendAsync<List<T>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
                 new
@@ -94,7 +98,8 @@ namespace DesktopController
                     MaxAcos = maxAcos,
                     StartDate = startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     EndDate = endDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    Offset = offset
+                    Offset = offset,
+                    MatchType = matchType
                 }, TimeSpan.FromMinutes(3));
             return response.Data;
         }

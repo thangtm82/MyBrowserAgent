@@ -2,7 +2,7 @@
 
 `POST /api/amazon-ads/targets/filter` runs the `TargetsReport` request from `requestTarget.txt` inside the signed-in Selenium Chrome session. It uses client-supplied `AccountInfo` in the Amazon Ads headers and browser cookies for the request. The current `/cb` tab is reused; otherwise the Agent uses a temporary `/cb` tab.
 
-The request accepts inclusive ACoS bounds, inclusive calendar dates and a required page offset:
+The request accepts inclusive ACoS bounds, inclusive calendar dates, a required page offset, and optional `MatchType`:
 
 ```json
 {
@@ -17,9 +17,12 @@ The request accepts inclusive ACoS bounds, inclusive calendar dates and a requir
   "MaxAcos": 40,
   "StartDate": "2026-09-01",
   "EndDate": "2026-09-28",
-  "Offset": 0
+  "Offset": 0,
+  "MatchType": "TARGETING_EXPRESSION_PREDEFINED"
 }
 ```
+
+When `MatchType` is not empty, the Agent appends `{"field":"matchType","values":["TARGETING_EXPRESSION_PREDEFINED"],"comparisonOperator":"IN","not":false}` to the report's `filter.and` array (using the value supplied by the client). A missing, empty or whitespace-only `MatchType` adds no match type condition.
 
 Each call sends exactly one Amazon Ads request with `offsetPagination.size = 50` and the supplied `Offset`. The Agent returns only that page's `report.data` rows in the usual `ApiResult.Data` list; no matches returns `[]`. `report.numberOfRecords` is the total for the filter, not the number of rows returned by this call. The client chooses the next offset (for example, `0`, `50`, `100`) and makes another API call when it wants the next page. A mismatched offset or malformed row raises an error.
 
@@ -30,7 +33,8 @@ AmazonAdsAccountInfo info = await agent.StartAmazonAdsSessionAsync();
 IList<AmazonAdsTarget> targets = await agent.FilterTargetsTypedAsync(
     info, 10, 40,
     new DateTime(2026, 9, 1), new DateTime(2026, 9, 28),
-    offset: 0);
+    offset: 0,
+    matchType: "TARGETING_EXPRESSION_PREDEFINED");
 
 foreach (var target in targets)
     Console.WriteLine($"{target.TargetId}: {target.Acos}");

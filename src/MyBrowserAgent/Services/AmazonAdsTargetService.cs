@@ -153,6 +153,17 @@ namespace MyBrowserAgent.Services
                 new JObject { ["field"] = "acos", ["comparisonOperator"] = "GREATER_THAN_OR_EQUALS",
                     ["value"] = filter.MinAcos.Value, ["not"] = false });
 
+            if (!string.IsNullOrWhiteSpace(filter.MatchType))
+            {
+                conditions.Add(new JObject
+                {
+                    ["field"] = "matchType",
+                    ["values"] = new JArray(filter.MatchType.Trim()),
+                    ["comparisonOperator"] = "IN",
+                    ["not"] = false
+                });
+            }
+
             return new JObject
             {
                 ["reportConfig"] = new JObject

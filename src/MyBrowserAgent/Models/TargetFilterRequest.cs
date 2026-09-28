@@ -10,5 +10,6 @@ namespace MyBrowserAgent.Models
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int? Offset { get; set; }
+        public string MatchType { get; set; }
     }
 }
