@@ -1,5 +1,6 @@
 using System;
 using System.Text.RegularExpressions;
+using System.Threading;
 using MyBrowserAgent.Models;
 
 namespace MyBrowserAgent.Services
@@ -7,6 +8,7 @@ namespace MyBrowserAgent.Services
     public sealed class AmazonAdsAccountInfoService
     {
         private const string CampaignUrl = "https://advertising.amazon.com/cb";
+        private const string CampaignManagerUrl = "https://advertising.amazon.com/campaign-manager";
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         public AmazonAdsAccountInfo GetAccountInfo(BrowserService browser)
@@ -24,6 +26,32 @@ namespace MyBrowserAgent.Services
                 throw new InvalidOperationException(
                     "EntityId was not found on the Amazon Ads page; check the Chrome login or page format.");
             return info;
+        }
+
+        public AmazonAdsAccountInfo StartSession(BrowserService browser)
+        {
+            if (browser == null) throw new ArgumentNullException(nameof(browser));
+
+            return browser.RunInNewSession(CampaignManagerUrl, driver =>
+            {
+                var deadline = DateTime.UtcNow.AddSeconds(15);
+                do
+                {
+                    var info = Parse(driver.PageSource);
+                    if (!string.IsNullOrEmpty(info.EntityId) &&
+                        !string.IsNullOrEmpty(info.GlobalAccountId) &&
+                        !string.IsNullOrEmpty(info.MarketplaceId) &&
+                        !string.IsNullOrEmpty(info.ClientId) &&
+                        !string.IsNullOrEmpty(info.CsrfToken))
+                        return info;
+
+                    if (DateTime.UtcNow >= deadline) break;
+                    Thread.Sleep(250);
+                } while (true);
+
+                throw new InvalidOperationException(
+                    "Amazon Ads account fields are missing; sign in to Chrome or check the page format.");
+            });
         }
 
         public static AmazonAdsAccountInfo Parse(string html)

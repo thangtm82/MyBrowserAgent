@@ -213,6 +213,7 @@ Main endpoints:
 | POST | `/api/browser/back` | Browser back |
 | POST | `/api/browser/forward` | Browser forward |
 | POST | `/api/browser/refresh` | Browser refresh |
+| POST | `/api/amazon-ads/start-session` | Restart the Agent's Chrome session, open campaign manager and return Amazon Ads account information |
 | POST | `/api/amazon-ads/account-info` | Read Amazon Ads account data from the Selenium Chrome session |
 | POST | `/api/amazon-ads/campaigns/filter` | Filter campaigns with in-browser Amazon Ads fetch |
 | POST | `/api/amazon-ads/targets/filter` | Return one target report page at the client-supplied offset (50 rows maximum) |

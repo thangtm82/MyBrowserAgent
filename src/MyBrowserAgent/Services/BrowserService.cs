@@ -274,6 +274,22 @@ namespace MyBrowserAgent.Services
             });
         }
 
+        public T RunInNewSession<T>(string url, Func<IWebDriver, T> action)
+        {
+            if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("Url is required.", nameof(url));
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            lock (_sync)
+            {
+                // A fresh WebDriver session uses the same persistent Chrome profile.
+                Stop();
+                Start();
+                var driver = Driver;
+                driver.Navigate().GoToUrl(url);
+                return action(driver);
+            }
+        }
+
         public T RunInTemporaryTab<T>(string url, Func<IWebDriver, T> action)
         {
             if (string.IsNullOrWhiteSpace(url)) throw new ArgumentException("Url is required.", nameof(url));
