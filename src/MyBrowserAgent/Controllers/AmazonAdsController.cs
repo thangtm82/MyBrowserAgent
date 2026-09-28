@@ -15,6 +15,7 @@ namespace MyBrowserAgent.Controllers
         private readonly AmazonAdsAccountInfoService _service = new AmazonAdsAccountInfoService();
         private readonly AmazonAdsCampaignService _campaigns = new AmazonAdsCampaignService();
         private readonly AmazonAdsTargetService _targets = new AmazonAdsTargetService();
+        private readonly AmazonAdsTargetBidService _targetBids = new AmazonAdsTargetBidService();
 
         [HttpPost, Route("campaigns/filter")]
         public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
@@ -61,6 +62,36 @@ namespace MyBrowserAgent.Controllers
             catch (InvalidOperationException ex)
             {
                 return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
+        [HttpPut, Route("targets/bid")]
+        public IHttpActionResult UpdateTargetBid(TargetBidUpdateRequest request)
+        {
+            try
+            {
+                var result = _targetBids.Update(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(result));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
             }
             catch (WebDriverException ex)
             {

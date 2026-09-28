@@ -88,6 +88,16 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidAsync(
+            string targetId, string countryCode, decimal bid)
+        {
+            var response = await SendAsync<AmazonAdsTargetBidUpdateResult>(
+                HttpMethod.Put, "api/amazon-ads/targets/bid",
+                new { TargetId = targetId, CountryCode = countryCode, Bid = bid },
+                TimeSpan.FromMinutes(3));
+            return response.Data;
+        }
+
         public async Task<string> GetHtmlAsync()
         {
             var response = await SendAsync<string>(HttpMethod.Get, "api/browser/html", null);
