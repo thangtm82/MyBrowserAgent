@@ -68,8 +68,12 @@ namespace MyBrowserAgent
 
                     var inputThread = new System.Threading.Thread(() =>
                     {
-                        try { Console.ReadLine(); } catch { }
-                        exit.Set();
+                        try
+                        {
+                            // Scheduled Task may have no stdin; EOF must not stop the agent.
+                            if (Console.ReadLine() != null) exit.Set();
+                        }
+                        catch { }
                     });
                     inputThread.IsBackground = true;
                     inputThread.Start();

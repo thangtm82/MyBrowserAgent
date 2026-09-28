@@ -39,6 +39,7 @@ Chrome/ChromeDriver binaries are intentionally not committed to this repository.
 - `src/MyBrowserAgent` — BrowserAgent HTTP API, Selenium browser host.
 - `samples/DesktopController` — .NET Framework 4.7.2 example client for controlling multiple VPS machines.
 - `scripts/configure-server.cmd` — URL ACL and optional firewall rule helper.
+- `scripts/install-startup.ps1` and `scripts/remove-startup.ps1` — Windows logon task setup.
 
 ## Build
 
@@ -166,21 +167,17 @@ Browser: starting...
 READY
 ```
 
-### Recommended startup on Windows Server 2012 R2
+### Automatic startup on Windows Server 2012 R2
 
-Use **Task Scheduler**, not a LocalSystem Windows Service, when `Headless=false`.
+Install an interactive logon Scheduled Task under the Windows user who runs Chrome:
 
-Recommended task settings:
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\BrowserAgent\scripts\install-startup.ps1" -AgentPath "C:\BrowserAgent\MyBrowserAgent.exe"
+```
 
-- Trigger: At log on
-- User: the same Windows user that owns/uses the Chrome profile
-- Run only when user is logged on
-- Start: `C:\BrowserAgent\MyBrowserAgent.exe`
-- Start in: `C:\BrowserAgent`
+Copy the two scripts from `scripts\` to `C:\BrowserAgent\scripts\` first, and run the command in an elevated Windows PowerShell session under that same user. `AutoStartBrowser=true` in `config.json` also starts Chrome when the Agent launches.
 
-This keeps the visible Chrome window in the user's interactive session.
-
-When leaving RDP, **Disconnect** rather than signing out if you want Chrome and BrowserAgent to remain running.
+See [automatic Windows startup](docs/WindowsStartup.md) for setup, verification, and removal. The logon task needs a signed-in user; when leaving RDP, disconnect instead of signing out if the Agent should remain running.
 
 ## HTTP API
 
