@@ -1,6 +1,6 @@
 # Filter Amazon Ads targets
 
-`POST /api/amazon-ads/targets/filter` runs the `TargetsReport` request from `requestTarget.txt` inside the signed-in Selenium Chrome session. It uses client-supplied `AccountInfo` in the Amazon Ads headers and browser cookies for the request. The current `campaign-manager` tab is reused; otherwise the Agent uses a temporary `/cb` tab.
+`POST /api/amazon-ads/targets/filter` runs the `TargetsReport` request from `requestTarget.txt` inside the signed-in Selenium Chrome session. It uses client-supplied `AccountInfo` in the Amazon Ads headers and browser cookies for the request. The current `/cb` tab is reused; otherwise the Agent uses a temporary `/cb` tab.
 
 The request accepts inclusive ACoS bounds, inclusive calendar dates and a required page offset:
 

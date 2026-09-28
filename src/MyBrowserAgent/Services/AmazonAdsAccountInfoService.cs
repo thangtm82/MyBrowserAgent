@@ -8,7 +8,6 @@ namespace MyBrowserAgent.Services
     public sealed class AmazonAdsAccountInfoService
     {
         private const string CampaignUrl = "https://advertising.amazon.com/cb";
-        private const string CampaignManagerUrl = "https://advertising.amazon.com/campaign-manager";
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         public AmazonAdsAccountInfo GetAccountInfo(BrowserService browser)
@@ -32,7 +31,7 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
 
-            return browser.RunInNewSession(CampaignManagerUrl, driver =>
+            return browser.RunInNewSession(CampaignUrl, driver =>
             {
                 var deadline = DateTime.UtcNow.AddSeconds(15);
                 do

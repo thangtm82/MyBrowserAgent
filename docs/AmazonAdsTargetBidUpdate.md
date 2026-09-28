@@ -1,6 +1,6 @@
 # Update an Amazon Ads target bid
 
-`PUT /api/amazon-ads/targets/bid` changes one target's bid using the Agent's signed-in Selenium Chrome session. The Agent uses client-supplied `AccountInfo` for Amazon Ads headers and runs a same-origin `PUT /a9g-api-gateway/cm/adsApi/targets/update`. Chrome sends session cookies. The current `campaign-manager` tab is reused; otherwise the Agent uses a temporary `/cb` tab.
+`PUT /api/amazon-ads/targets/bid` changes one target's bid using the Agent's signed-in Selenium Chrome session. The Agent uses client-supplied `AccountInfo` for Amazon Ads headers and runs a same-origin `PUT /a9g-api-gateway/cm/adsApi/targets/update`. Chrome sends session cookies. The current `/cb` tab is reused; otherwise the Agent uses a temporary `/cb` tab.
 
 The request requires the Agent's usual `X-Api-Key` and a JSON body:
 
