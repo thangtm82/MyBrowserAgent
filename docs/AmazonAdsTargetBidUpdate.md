@@ -27,3 +27,39 @@ Console.WriteLine($"Updated target {result.UpdatedTargets[0].TargetId}: " +
 ```
 
 The client sends no Cookie header. The Agent uses the Chrome profile's existing Amazon Ads login.
+
+## Update many targets
+
+`PUT /api/amazon-ads/targets/bids` accepts the array directly as its JSON body:
+
+```json
+[
+  {"targetId":"389597041525084","countryCodes":["US"],"bid":"0.33"},
+  {"targetId":"364231510296738","countryCodes":["US"],"bid":"1.09"}
+]
+```
+
+Each entry needs a unique `targetId`, a nonempty `countryCodes` array, and a positive decimal `bid` string using a dot as the separator. The Agent sends the entire array in **one** Amazon Ads request through the signed-in Chrome session. `ApiResult.Data` contains the complete Amazon response. Inspect `failedTargetIds` and `bulkUpdateSummary` after every call: some targets may fail while others succeed. An HTTP error or malformed response is reported as an Agent error.
+
+Desktop client example:
+
+```csharp
+var updates = new List<AmazonAdsTargetBidUpdateItem>
+{
+    new AmazonAdsTargetBidUpdateItem
+    {
+        TargetId = "389597041525084",
+        CountryCodes = new List<string> { "US" },
+        Bid = "0.33"
+    },
+    new AmazonAdsTargetBidUpdateItem
+    {
+        TargetId = "364231510296738",
+        CountryCodes = new List<string> { "US" },
+        Bid = "1.09"
+    }
+};
+AmazonAdsTargetBidUpdateResult result = await agent.UpdateTargetBidsAsync(updates);
+Console.WriteLine($"Updated: {result.BulkUpdateSummary.SuccessfulCount}; " +
+    $"failed: {result.BulkUpdateSummary.FailedCount}");
+```

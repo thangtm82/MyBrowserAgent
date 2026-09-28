@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Web.Http;
@@ -75,6 +76,36 @@ namespace MyBrowserAgent.Controllers
             try
             {
                 var result = _targetBids.Update(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(result));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
+        [HttpPut, Route("targets/bids")]
+        public IHttpActionResult UpdateTargetBids([FromBody] IList<TargetBidUpdateItem> requests)
+        {
+            try
+            {
+                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, requests);
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)

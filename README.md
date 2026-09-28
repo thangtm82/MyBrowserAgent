@@ -220,6 +220,7 @@ Main endpoints:
 | POST | `/api/amazon-ads/campaigns/filter` | Filter campaigns with in-browser Amazon Ads fetch |
 | POST | `/api/amazon-ads/targets/filter` | Return one target report page at the client-supplied offset (50 rows maximum) |
 | PUT | `/api/amazon-ads/targets/bid` | Update one target bid and return Amazon's update result |
+| PUT | `/api/amazon-ads/targets/bids` | Update multiple target bids in one Amazon request and return per-target results |
 
 See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), and [target filtering](docs/AmazonAdsTargetFilter.md), and [target bid updates](docs/AmazonAdsTargetBidUpdate.md) for .NET Framework desktop examples.
 

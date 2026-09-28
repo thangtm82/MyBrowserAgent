@@ -37,10 +37,26 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
-            return browser.RunInTemporaryTab(CampaignUrl, driver => UpdateInBrowser(driver, request));
+            var targetId = request.TargetId.Trim();
+            var body = new JArray(new JObject
+            {
+                ["targetId"] = targetId,
+                ["countryCodes"] = new JArray(request.CountryCode.Trim().ToUpperInvariant()),
+                ["bid"] = request.Bid.Value.ToString(CultureInfo.InvariantCulture)
+            });
+            return browser.RunInTemporaryTab(CampaignUrl,
+                driver => UpdateInBrowser(driver, body, targetId));
         }
 
-        private static JObject UpdateInBrowser(IWebDriver driver, TargetBidUpdateRequest request)
+        public JObject UpdateMany(BrowserService browser, IList<TargetBidUpdateItem> requests)
+        {
+            if (browser == null) throw new ArgumentNullException(nameof(browser));
+            var body = BuildManyPayload(requests);
+            return browser.RunInTemporaryTab(CampaignUrl,
+                driver => UpdateInBrowser(driver, body, null));
+        }
+
+        private static JObject UpdateInBrowser(IWebDriver driver, JArray body, string singleTargetId)
         {
             var info = WaitForAccountInfo(driver);
             var headers = new Dictionary<string, string>
@@ -61,15 +77,6 @@ namespace MyBrowserAgent.Services
                 headers["x-amzn-trace-id"] = "Root=" + info.TraceId +
                     ";Parent=" + info.SegmentId + ";Sampled=1";
 
-            var targetId = request.TargetId.Trim();
-            var body = new JArray(new JObject
-            {
-                ["targetId"] = targetId,
-                ["countryCodes"] = new JArray(request.CountryCode.Trim().ToUpperInvariant()),
-                // The captured request sends bid as a JSON string.
-                ["bid"] = request.Bid.Value.ToString(CultureInfo.InvariantCulture)
-            });
-
             var timeouts = driver.Manage().Timeouts();
             var originalTimeout = timeouts.AsynchronousJavaScript;
             try
@@ -87,7 +94,9 @@ namespace MyBrowserAgent.Services
                         "). Check login, target access, and bid.");
 
                 var response = JObject.Parse(result.Value<string>("body") ?? "");
-                ConfirmUpdate(response, targetId);
+                ConfirmResponseShape(response);
+                if (singleTargetId != null)
+                    ConfirmUpdate(response, singleTargetId);
                 return response;
             }
             finally
@@ -96,14 +105,19 @@ namespace MyBrowserAgent.Services
             }
         }
 
+        private static void ConfirmResponseShape(JObject response)
+        {
+            if (!(response["updatedTargets"] is JArray) ||
+                !(response["failedTargetIds"] is JArray) ||
+                !(response["bulkUpdateSummary"] is JObject))
+                throw new InvalidOperationException("Amazon Ads target bid response is missing update results.");
+        }
+
         private static void ConfirmUpdate(JObject response, string targetId)
         {
-            var updated = response["updatedTargets"] as JArray;
-            var failed = response["failedTargetIds"] as JArray;
-            var summary = response["bulkUpdateSummary"] as JObject;
-            if (updated == null || failed == null || summary == null)
-                throw new InvalidOperationException("Amazon Ads target bid response is missing update results.");
-
+            var updated = (JArray)response["updatedTargets"];
+            var failed = (JArray)response["failedTargetIds"];
+            var summary = (JObject)response["bulkUpdateSummary"];
             var confirmed = false;
             foreach (var item in updated)
             {
@@ -136,6 +150,45 @@ namespace MyBrowserAgent.Services
                 Thread.Sleep(250);
             } while (true);
             throw new InvalidOperationException("Amazon Ads account fields are missing; check the Chrome login or page format.");
+        }
+
+        private static JArray BuildManyPayload(IList<TargetBidUpdateItem> requests)
+        {
+            if (requests == null || requests.Count == 0)
+                throw new ArgumentException("Request body must contain at least one target.");
+
+            var body = new JArray();
+            var targetIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var item in requests)
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.TargetId))
+                    throw new ArgumentException("Each targetId is required.");
+                var targetId = item.TargetId.Trim();
+                if (!targetIds.Add(targetId))
+                    throw new ArgumentException("Duplicate targetId: " + targetId + ".");
+                if (item.CountryCodes == null || item.CountryCodes.Count == 0)
+                    throw new ArgumentException("Each countryCodes array must contain at least one code.");
+
+                var countries = new JArray();
+                foreach (var country in item.CountryCodes)
+                {
+                    if (string.IsNullOrWhiteSpace(country))
+                        throw new ArgumentException("countryCodes cannot contain an empty code.");
+                    countries.Add(country.Trim().ToUpperInvariant());
+                }
+
+                if (!decimal.TryParse(item.Bid, NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture, out var bid) || bid <= 0)
+                    throw new ArgumentException("Each bid must be a positive decimal string.");
+
+                body.Add(new JObject
+                {
+                    ["targetId"] = targetId,
+                    ["countryCodes"] = countries,
+                    ["bid"] = bid.ToString(CultureInfo.InvariantCulture)
+                });
+            }
+            return body;
         }
 
         private static void Validate(TargetBidUpdateRequest request)

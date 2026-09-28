@@ -3,6 +3,18 @@ using Newtonsoft.Json;
 
 namespace DesktopController
 {
+    public sealed class AmazonAdsTargetBidUpdateItem
+    {
+        [JsonProperty("targetId")]
+        public string TargetId { get; set; }
+
+        [JsonProperty("countryCodes")]
+        public IList<string> CountryCodes { get; set; }
+
+        [JsonProperty("bid")]
+        public string Bid { get; set; }
+    }
+
     public sealed class AmazonAdsTargetBidUpdateResult
     {
         [JsonProperty("updatedTargets")]
