@@ -146,6 +146,17 @@ namespace DesktopController
             }
         }
 
+        public async Task<string> GetCookiesTextAsync()
+        {
+            using (var response = await _http.GetAsync("api/browser/cookies/text"))
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                    throw new InvalidOperationException(Name + ": HTTP " + (int)response.StatusCode + " - " + body);
+                return body;
+            }
+        }
+
         public async Task ScreenshotAsync(string filePath)
         {
             using (var response = await _http.GetAsync("api/browser/screenshot"))

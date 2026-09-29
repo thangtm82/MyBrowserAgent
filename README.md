@@ -202,6 +202,7 @@ Main endpoints:
 | POST | `/api/browser/javascript` | Execute JavaScript |
 | GET | `/api/browser/screenshot` | Return PNG screenshot |
 | GET | `/api/browser/cookies` | Get current-domain cookies |
+| GET | `/api/browser/cookies/text` | Get current-domain cookies as plain text with values |
 | POST | `/api/browser/cookies/clear` | Clear cookies |
 | POST | `/api/browser/wait` | Wait for an element |
 | POST | `/api/browser/text` | Get element text |
@@ -301,6 +302,14 @@ To explicitly include values:
 ```text
 GET /api/browser/cookies?includeValues=true
 ```
+
+To return the current page's cookies as raw `text/plain` in `name=value; name2=value2` format:
+
+```text
+GET /api/browser/cookies/text
+```
+
+The route requires the usual `X-Api-Key`. In the desktop sample use `await agent.GetCookiesTextAsync()`. The response includes cookie values, including HttpOnly cookies visible to Selenium, and is marked `Cache-Control: no-store`.
 
 Treat cookie values as secrets. Do not log them.
 

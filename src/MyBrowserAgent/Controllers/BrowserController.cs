@@ -88,6 +88,23 @@ namespace MyBrowserAgent.Controllers
         [HttpGet, Route("cookies")]
         public IHttpActionResult Cookies(bool includeValues = false) => Run(() => BrowserAgentRuntime.Browser.GetCookies(includeValues));
 
+        [HttpGet, Route("cookies/text")]
+        public HttpResponseMessage CookiesText()
+        {
+            try
+            {
+                var value = BrowserAgentRuntime.Browser.GetCookiesText();
+                var response = Request.CreateResponse(HttpStatusCode.OK);
+                response.Content = new StringContent(value, System.Text.Encoding.UTF8, "text/plain");
+                response.Headers.CacheControl = new CacheControlHeaderValue { NoStore = true };
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
         [HttpPost, Route("cookies/clear")]
         public IHttpActionResult ClearCookies() => Run(() => { BrowserAgentRuntime.Browser.DeleteAllCookies(); return null; });
 

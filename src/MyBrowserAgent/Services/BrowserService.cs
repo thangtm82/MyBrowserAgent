@@ -362,6 +362,15 @@ namespace MyBrowserAgent.Services
             }
         }
 
+        public string GetCookiesText()
+        {
+            lock (_sync)
+            {
+                var cookies = Driver.Manage().Cookies.AllCookies;
+                return string.Join("; ", cookies.Select(x => $"{x.Name}={x.Value}"));
+            }
+        }
+
         public void DeleteAllCookies()
         {
             lock (_sync) Driver.Manage().Cookies.DeleteAllCookies();
