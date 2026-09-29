@@ -12,7 +12,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\BrowserAgent\scripts
 
 Copy `scripts\install-startup.ps1` and `scripts\remove-startup.ps1` from this repository to `C:\BrowserAgent\scripts\` first. The installer checks the executable and adjacent `config.json`. It creates or replaces the task named `MyBrowserAgent` for the current user, using that executable's directory as **Start in**. It runs only when this user is signed in, restarts up to three times after a failure, and has no 72-hour execution limit.
 
-If you use a different folder, change `-AgentPath` accordingly. If several Agents share one Windows account, pass a distinct `-TaskName` to each installer call.
+If you use a different folder, change `-AgentPath` accordingly. Only one MyBrowserAgent process can run on each Windows machine, even across user logon sessions. A second launch exits without starting Chrome or the API.
 
 ## Check and test
 
@@ -32,6 +32,8 @@ Confirm the API with your normal `X-Api-Key` header:
 ```powershell
 curl.exe -H "X-Api-Key: YOUR_KEY" http://127.0.0.1:5050/api/browser/status
 ```
+
+To verify the one-instance behavior, start `MyBrowserAgent.exe` manually while the scheduled Agent is running; the second process prints `MyBrowserAgent is already running. Exiting.` and exits with code 0. Stop an older deployed build before upgrading because it does not hold the new mutex.
 
 You can also sign out and sign back in to verify the logon trigger. When leaving RDP, disconnect instead of signing out if Chrome should continue running. A logon task starts after sign-in; it does not start Chrome before any user has signed in. The task uses the current user's environment variables, so sign in again after setting `MYBROWSERAGENT_API_KEY`.
 

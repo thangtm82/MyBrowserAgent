@@ -167,6 +167,8 @@ Browser: starting...
 READY
 ```
 
+At startup, the Agent takes a machine-wide named mutex. If another MyBrowserAgent instance is already running, the new process prints `MyBrowserAgent is already running. Exiting.` and exits with code 0 before opening Chrome or the HTTP listener. Stop an older deployed version before upgrading: older builds do not hold this mutex.
+
 ### Automatic startup on Windows Server 2012 R2
 
 Install an interactive logon Scheduled Task under the Windows user who runs Chrome:

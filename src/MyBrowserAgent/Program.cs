@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Microsoft.Owin.Hosting;
 using MyBrowserAgent.Configuration;
 using MyBrowserAgent.Runtime;
@@ -10,7 +11,42 @@ namespace MyBrowserAgent
 {
     internal static class Program
     {
+        private const string InstanceMutexName = @"Global\MyBrowserAgent";
+
         private static int Main(string[] args)
+        {
+            Mutex instanceMutex;
+            bool createdNew;
+            try
+            {
+                instanceMutex = new Mutex(true, InstanceMutexName, out createdNew);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.Error.WriteLine("Could not acquire the Agent instance lock: " + ex.Message);
+                return 1;
+            }
+
+            using (instanceMutex)
+            {
+                if (!createdNew)
+                {
+                    Console.WriteLine("MyBrowserAgent is already running. Exiting.");
+                    return 0;
+                }
+
+                try
+                {
+                    return RunAgent();
+                }
+                finally
+                {
+                    instanceMutex.ReleaseMutex();
+                }
+            }
+        }
+
+        private static int RunAgent()
         {
             Console.Title = "MyBrowserAgent";
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;

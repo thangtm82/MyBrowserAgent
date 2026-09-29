@@ -27,3 +27,21 @@ jobs:
         run: dotnet restore MyBrowserAgent.sln
       - name: Build
         run: dotnet build MyBrowserAgent.sln -c Release --no-restore
+
+      - name: Reject a second Agent instance
+        shell: powershell
+        run: |
+          $createdNew = $false
+          $mutex = [System.Threading.Mutex]::new($true, 'Global\MyBrowserAgent', [ref]$createdNew)
+          try {
+            if (-not $createdNew) { throw 'The test mutex already exists.' }
+            $output = & '.\src\MyBrowserAgent\bin\Release\net472\MyBrowserAgent.exe' 2>&1
+            if ($LASTEXITCODE -ne 0) { throw "Second instance exited with ${LASTEXITCODE}: $output" }
+            if (($output | Out-String) -notmatch 'already running') {
+              throw "Second instance did not report the existing Agent: $output"
+            }
+          }
+          finally {
+            if ($createdNew) { $mutex.ReleaseMutex() }
+            $mutex.Dispose()
+          }
