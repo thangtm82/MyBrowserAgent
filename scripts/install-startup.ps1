@@ -23,7 +23,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $directory 'config.json') -PathType 
 }
 
 $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$action = New-ScheduledTaskAction -Execute $resolvedPath -WorkingDirectory $directory
+$action = New-ScheduledTaskAction -Execute $resolvedPath -Argument '--no-window' -WorkingDirectory $directory
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet `
@@ -42,5 +42,6 @@ Register-ScheduledTask -TaskName $TaskName -TaskPath '\' `
 Write-Host "Installed scheduled task: $TaskName"
 Write-Host "User: $user"
 Write-Host "Executable: $resolvedPath"
-Write-Host 'Trigger: at user logon (interactive session).'
+Write-Host 'Trigger: at user logon (interactive session). The Agent console is hidden; Chrome remains visible.'
+Write-Host 'Agent log: %LOCALAPPDATA%\MyBrowserAgent\logs\agent-YYYYMMDD.log'
 Write-Host "Check: Get-ScheduledTask -TaskName '$TaskName' | Get-ScheduledTaskInfo"

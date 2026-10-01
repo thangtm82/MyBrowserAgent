@@ -45,3 +45,25 @@ jobs:
             if ($createdNew) { $mutex.ReleaseMutex() }
             $mutex.Dispose()
           }
+
+      - name: Run no-window mode and verify its log
+        shell: powershell
+        run: |
+          $createdNew = $false
+          $mutex = [System.Threading.Mutex]::new($true, 'Global\MyBrowserAgent', [ref]$createdNew)
+          try {
+            if (-not $createdNew) { throw 'The test mutex already exists.' }
+            $exe = (Resolve-Path '.\src\MyBrowserAgent\bin\Release\net472\MyBrowserAgent.exe').Path
+            $process = Start-Process -FilePath $exe -ArgumentList '--no-window' -PassThru -Wait
+            if ($process.ExitCode -ne 0) { throw "No-window Agent exited with $($process.ExitCode)" }
+            $log = Join-Path $env:LOCALAPPDATA ("MyBrowserAgent\logs\agent-{0}.log" -f (Get-Date -Format yyyyMMdd))
+            if (-not (Test-Path $log)) { throw "Agent log was not created: $log" }
+            $output = Get-Content $log -Raw
+            if ($output -notmatch 'no-window mode' -or $output -notmatch 'already running') {
+              throw "No-window Agent did not log startup and duplicate detection: $output"
+            }
+          }
+          finally {
+            if ($createdNew) { $mutex.ReleaseMutex() }
+            $mutex.Dispose()
+          }

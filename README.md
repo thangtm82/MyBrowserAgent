@@ -174,7 +174,7 @@ Install an interactive logon Scheduled Task under the Windows user who runs Chro
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\BrowserAgent\scripts\install-startup.ps1" -AgentPath "C:\BrowserAgent\MyBrowserAgent.exe"
 ```
 
-Copy the two scripts from `scripts\` to `C:\BrowserAgent\scripts\` first, and run the command in an elevated Windows PowerShell session under that same user. `AutoStartBrowser=true` in `config.json` also starts Chrome when the Agent launches.
+Copy the two scripts from `scripts\` to `C:\BrowserAgent\scripts\` first, and run the command in an elevated Windows PowerShell session under that same user. The task runs `MyBrowserAgent.exe --no-window`, hiding the Agent console while keeping Selenium's Chrome visible. Agent startup output is written to `%LOCALAPPDATA%\MyBrowserAgent\logs\agent-YYYYMMDD.log` for that Windows user. Re-run the installer after upgrading the Agent to update an existing task. `AutoStartBrowser=true` in `config.json` also starts Chrome when the Agent launches.
 
 See [automatic Windows startup](docs/WindowsStartup.md) for setup, verification, and removal. The logon task needs a signed-in user; when leaving RDP, disconnect instead of signing out if the Agent should remain running.
 

@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Microsoft.Owin.Hosting;
 using MyBrowserAgent.Configuration;
@@ -13,8 +15,46 @@ namespace MyBrowserAgent
     {
         private const string InstanceMutexName = @"Global\MyBrowserAgent";
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool FreeConsole();
+
+        private static void DetachConsoleAndLog()
+        {
+            var logDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MyBrowserAgent", "logs");
+            Directory.CreateDirectory(logDirectory);
+            var logPath = Path.Combine(logDirectory, "agent-" + DateTime.Now.ToString("yyyyMMdd") + ".log");
+            var stream = new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            var writer = TextWriter.Synchronized(new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true });
+            Console.SetOut(writer);
+            Console.SetError(writer);
+            Console.WriteLine("MyBrowserAgent starting at " + DateTime.Now.ToString("O") + " (no-window mode)");
+            if (!FreeConsole())
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        }
+
         private static int Main(string[] args)
         {
+            var noWindow = args != null && args.Length == 1 &&
+                string.Equals(args[0], "--no-window", StringComparison.OrdinalIgnoreCase);
+            if (args != null && args.Length > 0 && !noWindow)
+            {
+                Console.Error.WriteLine("Usage: MyBrowserAgent.exe [--no-window]");
+                return 2;
+            }
+
+            if (noWindow)
+            {
+                try { DetachConsoleAndLog(); }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine("Could not start no-window mode: " + ex);
+                    return 1;
+                }
+            }
+
             Mutex instanceMutex;
             bool createdNew;
             try
@@ -37,7 +77,7 @@ namespace MyBrowserAgent
 
                 try
                 {
-                    return RunAgent();
+                    return RunAgent(noWindow);
                 }
                 finally
                 {
@@ -46,9 +86,9 @@ namespace MyBrowserAgent
             }
         }
 
-        private static int RunAgent()
+        private static int RunAgent(bool noWindow)
         {
-            Console.Title = "MyBrowserAgent";
+            if (!noWindow) Console.Title = "MyBrowserAgent";
             var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var configPath = Path.Combine(baseDirectory, "config.json");
 
@@ -98,22 +138,25 @@ namespace MyBrowserAgent
                     }
 
                     Console.WriteLine("READY");
-                    Console.WriteLine("Press Ctrl+C or ENTER to exit.");
+                    if (!noWindow) Console.WriteLine("Press Ctrl+C or ENTER to exit.");
 
                     var exit = new System.Threading.ManualResetEvent(false);
-                    Console.CancelKeyPress += (sender, e) => { e.Cancel = true; exit.Set(); };
-
-                    var inputThread = new System.Threading.Thread(() =>
+                    if (!noWindow)
                     {
-                        try
+                        Console.CancelKeyPress += (sender, e) => { e.Cancel = true; exit.Set(); };
+
+                        var inputThread = new System.Threading.Thread(() =>
                         {
-                            // Scheduled Task may have no stdin; EOF must not stop the agent.
-                            if (Console.ReadLine() != null) exit.Set();
-                        }
-                        catch { }
-                    });
-                    inputThread.IsBackground = true;
-                    inputThread.Start();
+                            try
+                            {
+                                // Scheduled Task may have no stdin; EOF must not stop the agent.
+                                if (Console.ReadLine() != null) exit.Set();
+                            }
+                            catch { }
+                        });
+                        inputThread.IsBackground = true;
+                        inputThread.Start();
+                    }
                     exit.WaitOne();
                 }
 
