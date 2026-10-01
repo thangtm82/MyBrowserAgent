@@ -1,5 +1,6 @@
 {
   "Port": 5050,
+  "ListenMode": "Local",
   "ApiKey": "replace-with-a-long-random-key",
   "ChromeDriverDirectory": "driver",
   "ChromeProfileDirectory": "ChromeProfile",

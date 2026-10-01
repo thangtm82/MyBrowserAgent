@@ -6,6 +6,8 @@ namespace MyBrowserAgent.Configuration
     public sealed class AgentConfig
     {
         public int Port { get; set; } = 5050;
+        public string ListenMode { get; set; } = "Local";
+        public bool IsInternetMode { get { return ListenMode == "Internet"; } }
         public string ApiKey { get; set; }
         public string ChromeDriverDirectory { get; set; } = "driver";
         public string ChromeProfileDirectory { get; set; } = "ChromeProfile";
@@ -19,6 +21,12 @@ namespace MyBrowserAgent.Configuration
         {
             if (Port < 1 || Port > 65535)
                 throw new InvalidOperationException("Port must be between 1 and 65535.");
+            if (string.IsNullOrWhiteSpace(ListenMode) || string.Equals(ListenMode.Trim(), "Local", StringComparison.OrdinalIgnoreCase))
+                ListenMode = "Local";
+            else if (string.Equals(ListenMode.Trim(), "Internet", StringComparison.OrdinalIgnoreCase))
+                ListenMode = "Internet";
+            else
+                throw new InvalidOperationException("ListenMode must be Local or Internet.");
             if (PageLoadTimeoutSeconds < 1) PageLoadTimeoutSeconds = 60;
             if (ImplicitWaitSeconds < 0) ImplicitWaitSeconds = 0;
 

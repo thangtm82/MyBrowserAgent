@@ -73,8 +73,9 @@ namespace MyBrowserAgent
                 BrowserAgentRuntime.Config = config;
                 BrowserAgentRuntime.Browser = new BrowserService(config);
 
-                var listenUrl = "http://+:" + config.Port + "/";
+                var listenUrl = "http://" + (config.IsInternetMode ? "+" : "localhost") + ":" + config.Port + "/";
                 Console.WriteLine("MyBrowserAgent");
+                Console.WriteLine("Listen mode: " + config.ListenMode);
                 Console.WriteLine("Listening: " + listenUrl);
                 Console.WriteLine("Chrome profile: " + config.ChromeProfileDirectory);
                 Console.WriteLine("ChromeDriver: " + config.ChromeDriverDirectory);

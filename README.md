@@ -1,6 +1,6 @@
 # MyBrowserAgent
 
-Remote-control a Chrome browser running on a Windows VPS through a small HTTP API.
+Control a Chrome browser running on Windows through a small HTTP API, either locally or from another machine.
 
 This project is designed specifically for environments that must remain on **Windows Server 2012 R2** and **.NET Framework 4.7.2**.
 
@@ -20,7 +20,7 @@ Selenium WebDriver
 Chrome 109 + persistent Chrome profile
 ```
 
-Run one BrowserAgent on each VPS. Your desktop application talks only to the HTTP API; all browser automation happens locally on the VPS.
+Run one BrowserAgent on each machine. In Internet mode your desktop application can call the VPS HTTP API; all browser automation happens on the machine running the Agent.
 
 ## Important compatibility note
 
@@ -38,7 +38,7 @@ Chrome/ChromeDriver binaries are intentionally not committed to this repository.
 
 - `src/MyBrowserAgent` — BrowserAgent HTTP API, Selenium browser host.
 - `samples/DesktopController` — .NET Framework 4.7.2 example client for controlling multiple VPS machines.
-- `scripts/configure-server.cmd` — URL ACL and optional firewall rule helper.
+- `scripts/configure-server.cmd` — URL ACL and firewall configuration for Local/Internet mode.
 - `scripts/install-startup.ps1` and `scripts/remove-startup.ps1` — Windows logon task setup.
 
 ## Build
@@ -115,6 +115,7 @@ Example:
 ```json
 {
   "Port": 5050,
+  "ListenMode": "Local",
   "ApiKey": "replace-with-a-long-random-key",
   "ChromeDriverDirectory": "driver",
   "ChromeProfileDirectory": "ChromeProfile",
@@ -134,23 +135,18 @@ setx MYBROWSERAGENT_API_KEY "your-long-random-key"
 
 Open a new logon/session after changing a user environment variable.
 
-### 5. Configure HTTP URL ACL
+### 5. Choose the listening mode
 
-Run Command Prompt as Administrator:
+`ListenMode` defaults to `Local` when omitted. Set it in `config.json`, then run the matching command once in an elevated Command Prompt:
 
-```cmd
-scripts\configure-server.cmd 5050
-```
+| Mode | `config.json` | Command | API address |
+|---|---|---|---|
+| Local | `"ListenMode": "Local"` | `scripts\configure-server.cmd 5050 local` | `http://localhost:5050/` on this machine |
+| Internet | `"ListenMode": "Internet"` | `scripts\configure-server.cmd 5050 internet 192.168.1.20` | `http://YOUR_SERVER_IP:5050/` from the allowed IP |
 
-To also add a Windows Firewall rule restricted to the desktop's public/private IP:
+In Local mode the helper removes the Agent's previous inbound firewall rule and wildcard URL reservation. The API also rejects non-loopback connections. In Internet mode the helper opens inbound TCP port 5050; omit the final IP argument only if you intend to allow any remote IP. Keep your cloud firewall/NAT rules aligned with this choice. Stop the Agent, re-run the helper, then start it again each time you switch modes or ports. Run the helper as the same Windows user who runs the Agent.
 
-```cmd
-scripts\configure-server.cmd 5050 192.168.1.20
-```
-
-The second form is preferred.
-
-If you use Tailscale/WireGuard, restrict access to that private network instead of exposing the agent to the public Internet.
+The old `configure-server.cmd 5050 192.168.1.20` syntax has changed; specify `internet` before the remote IP. Use a private network such as Tailscale/WireGuard when possible.
 
 ## Run
 
@@ -162,7 +158,8 @@ Expected output:
 
 ```text
 MyBrowserAgent
-Listening: http://+:5050/
+Listen mode: Local
+Listening: http://localhost:5050/
 Browser: starting...
 READY
 ```
@@ -329,7 +326,7 @@ to:
 vps.json
 ```
 
-and configure your four VPS agents.
+and configure your four VPS agents in Internet mode.
 
 Example:
 
@@ -379,7 +376,7 @@ Recommended:
 1. Keep the port on Tailscale, WireGuard, LAN or another private network.
 2. Use a different long random API key per VPS.
 3. Restrict Windows Firewall to your desktop/VPN IP.
-4. Do not expose port 5050 to the whole Internet.
+4. Prefer Local mode unless another machine must call the API; restrict Internet mode to trusted IPs.
 5. Do not log cookie values, JavaScript payloads containing secrets, passwords or session tokens.
 6. Keep the dedicated Chrome profile separate from personal browsing.
 

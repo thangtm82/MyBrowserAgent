@@ -4,7 +4,7 @@ The Agent runs Selenium with a visible Chrome window when `Headless=false`. Inst
 
 ## Install on each VPS
 
-Copy the Release output to `C:\BrowserAgent\`, create `config.json`, add the matching `driver\chromedriver.exe`, and run `scripts\configure-server.cmd 5050 YOUR_DESKTOP_IP` once in an elevated Command Prompt. Log in as the Windows user who will run Chrome, then open **Windows PowerShell as Administrator** under that same account:
+Copy the Release output to `C:\BrowserAgent\`, create `config.json`, add the matching `driver\chromedriver.exe`, and run `scripts\configure-server.cmd 5050 local` once in an elevated Command Prompt for local access. For remote access, set `"ListenMode": "Internet"` in `config.json` and run `scripts\configure-server.cmd 5050 internet YOUR_DESKTOP_IP` instead. Stop the Agent, re-run the helper, then start it again when switching modes. Log in as the Windows user who will run Chrome, then open **Windows PowerShell as Administrator** under that same account:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\BrowserAgent\scripts\install-startup.ps1" -AgentPath "C:\BrowserAgent\MyBrowserAgent.exe"
