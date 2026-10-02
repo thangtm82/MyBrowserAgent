@@ -124,6 +124,22 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<AutoCampaignCreateResult> CreateAutoCampaignAsync(
+            AmazonAdsAccountInfo accountInfo, AdsAutoFormData formData,
+            int formVersion = 186, JObject featureFlags = null)
+        {
+            var response = await SendAsync<AutoCampaignCreateResult>(
+                HttpMethod.Post, "api/amazon-ads/campaigns/auto",
+                new
+                {
+                    AccountInfo = accountInfo,
+                    FormVersion = formVersion,
+                    FormData = formData,
+                    FeatureFlags = featureFlags ?? new JObject()
+                }, TimeSpan.FromMinutes(2));
+            return response.Data;
+        }
+
         public async Task<string> CreatePortfolioAsync(
             AmazonAdsAccountInfo accountInfo, string name)
         {

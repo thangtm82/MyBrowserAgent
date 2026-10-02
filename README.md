@@ -216,14 +216,15 @@ Main endpoints:
 | POST | `/api/amazon-ads/portfolios` | Create a portfolio in the signed-in Amazon Ads account and return its ID |
 | POST | `/api/amazon-ads/start-session` | Restart the Agent's Chrome session, open campaign manager and return Amazon Ads account information |
 | POST | `/api/amazon-ads/account-info` | Read Amazon Ads account data from the Selenium Chrome session |
+| POST | `/api/amazon-ads/campaigns/auto` | Submit a Sponsored Products automatic campaign in the signed-in browser |
 | POST | `/api/amazon-ads/campaigns/filter` | Filter campaigns with in-browser Amazon Ads fetch |
 | POST | `/api/amazon-ads/targets/filter` | Return one target report page at the client-supplied offset (50 rows maximum) |
 | PUT | `/api/amazon-ads/targets/bid` | Update one target bid and return Amazon's update result |
 | PUT | `/api/amazon-ads/targets/bids` | Update multiple target bids in one Amazon request and return per-target results |
 
-Call `POST /api/amazon-ads/start-session` (or `account-info`) to obtain `AmazonAdsAccountInfo`. Pass that object as `AccountInfo` in every campaign filter, target filter, bid update, and portfolio creation request. For bulk bid updates, send `{ "AccountInfo": { ... }, "Targets": [ ... ] }`; the Agent forwards only the target array to Amazon Ads. Client methods take the account info as their first argument. Keep it private and refresh it if the Chrome session changes.
+Call `POST /api/amazon-ads/start-session` (or `account-info`) to obtain `AmazonAdsAccountInfo`. Pass that object as `AccountInfo` in every campaign filter, target filter, bid update, portfolio creation, and automatic campaign creation request. For bulk bid updates, send `{ "AccountInfo": { ... }, "Targets": [ ... ] }`; the Agent forwards only the target array to Amazon Ads. Client methods take the account info as their first argument. Keep it private and refresh it if the Chrome session changes.
 
-See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), [target filtering](docs/AmazonAdsTargetFilter.md), [target bid updates](docs/AmazonAdsTargetBidUpdate.md), and [portfolio creation](docs/AmazonAdsPortfolioCreate.md) for .NET Framework desktop examples.
+See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), [target filtering](docs/AmazonAdsTargetFilter.md), [target bid updates](docs/AmazonAdsTargetBidUpdate.md), [portfolio creation](docs/AmazonAdsPortfolioCreate.md), and [automatic campaign creation](docs/AmazonAdsAutoCampaignCreate.md) for .NET Framework desktop examples.
 
 When the selected Selenium tab's URL starts with `https://advertising.amazon.com/cb`, Amazon Ads operations run on that tab and leave it open. From other pages, the Agent opens `/cb` in a temporary tab and restores the original tab afterward.
 

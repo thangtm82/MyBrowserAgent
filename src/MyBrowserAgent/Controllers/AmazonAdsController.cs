@@ -17,6 +17,7 @@ namespace MyBrowserAgent.Controllers
         private readonly AmazonAdsTargetService _targets = new AmazonAdsTargetService();
         private readonly AmazonAdsTargetBidService _targetBids = new AmazonAdsTargetBidService();
         private readonly AmazonAdsPortfolioService _portfolios = new AmazonAdsPortfolioService();
+        private readonly AmazonAdsAutoCampaignService _autoCampaigns = new AmazonAdsAutoCampaignService();
 
         [HttpPost, Route("campaigns/filter")]
         public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
@@ -115,6 +116,37 @@ namespace MyBrowserAgent.Controllers
             catch (Newtonsoft.Json.JsonException)
             {
                 return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost, Route("campaigns/auto")]
+        public IHttpActionResult CreateAutoCampaign(AutoCampaignCreateRequest request)
+        {
+            try
+            {
+                var result = _autoCampaigns.Create(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(result));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
+                    "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
             }
             catch (InvalidOperationException ex)
             {
