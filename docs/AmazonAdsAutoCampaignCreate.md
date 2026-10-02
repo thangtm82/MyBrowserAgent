@@ -37,7 +37,7 @@ Request `AmazonAdsAccountInfo` with `POST /api/amazon-ads/start-session` first. 
 }
 ```
 
-Use the actual ASIN, SKU, and start-date value expected by your existing form. The Agent preserves the supplied form fields, supplies the defaults from `classes.txt`, serializes the upstream body with camel-case names, and keeps the hyphenated automatic targeting group keys. The upstream body has `formId: "sp"` and `experience: "campaign"`. `FormVersion` defaults to 186 and can be updated by the client if Amazon's form version changes. Because `FeatureFlag` was not defined in the supplied file, `FeatureFlags` accepts arbitrary JSON; pass the flags used by your original form if an empty object is insufficient.
+Use the actual ASIN, SKU, and start-date value expected by your existing form. The `ProductAds` class defines `Asin`, and `Product` adds `Merchant.Sku`. The Agent preserves the supplied form fields, supplies the defaults from `classes.txt`, serializes the upstream body with camel-case names, and keeps the hyphenated automatic targeting group keys. The upstream body has `formId: "sp"` and `experience: "campaign"`. `FormVersion` defaults to 186 and can be updated by the client if Amazon's form version changes. Because `FeatureFlag` was not defined in the supplied file, `FeatureFlags` accepts arbitrary JSON; pass the flags used by your original form if an empty object is insufficient.
 
 The Agent accepts US (`ATVPDKIKX0DER`) and CA (`A2EUQ1WTGCTBG2`) account info. If `FormData.Portfolio` is supplied and its budget has no currency, the Agent fills USD or CAD from the marketplace; a conflicting currency is rejected. The active Chrome page must show the same entity, global account, marketplace, and advertiser ID as `AccountInfo`.
 

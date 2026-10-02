@@ -71,7 +71,12 @@ namespace DesktopController
         public string Policy { get; set; } = "NO_CAP";
     }
 
-    public sealed class Product
+    public class ProductAds
+    {
+        public string Asin { get; set; }
+    }
+
+    public sealed class Product : ProductAds
     {
         public Product() { }
 
@@ -81,7 +86,6 @@ namespace DesktopController
             Merchant = new Merchant { Sku = sku };
         }
 
-        public string Asin { get; set; }
         public Merchant Merchant { get; set; }
     }
 
