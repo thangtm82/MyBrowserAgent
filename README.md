@@ -220,7 +220,7 @@ Main endpoints:
 | POST | `/api/amazon-ads/campaigns/filter` | Filter campaigns with in-browser Amazon Ads fetch |
 | POST | `/api/amazon-ads/targets/filter` | Return one target report page at the client-supplied offset (50 rows maximum) |
 | PUT | `/api/amazon-ads/targets/bid` | Update one target bid and return Amazon's update result |
-| PUT | `/api/amazon-ads/targets/bids` | Update multiple target bids in one Amazon request and return per-target results |
+| PUT | `/api/amazon-ads/targets/bids` | Update multiple target bids in one Amazon request; write a trace log and return `X-Agent-Trace-Id` |
 
 Call `POST /api/amazon-ads/start-session` (or `account-info`) to obtain `AmazonAdsAccountInfo`. Pass that object as `AccountInfo` in every campaign filter, target filter, bid update, portfolio creation, and automatic campaign creation request. For bulk bid updates, send `{ "AccountInfo": { ... }, "Targets": [ ... ] }`; the Agent forwards only the target array to Amazon Ads. Client methods take the account info as their first argument. Keep it private and refresh it if the Chrome session changes.
 

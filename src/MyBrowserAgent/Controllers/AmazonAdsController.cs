@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Web.Http;
 using MyBrowserAgent.Models;
@@ -104,31 +105,51 @@ namespace MyBrowserAgent.Controllers
         [HttpPut, Route("targets/bids")]
         public IHttpActionResult UpdateTargetBids(TargetBidBulkUpdateRequest request)
         {
+            var traceId = Guid.NewGuid().ToString("N");
             try
             {
-                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request);
-                return Ok(ApiResult.Ok(result));
+                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request, traceId);
+                return BulkBidResponse(HttpStatusCode.OK, ApiResult.Ok(result), traceId);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BulkBidResponse(HttpStatusCode.BadRequest, ApiResult.Fail(ex.Message), traceId);
             }
             catch (Newtonsoft.Json.JsonException)
             {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."));
+                return BulkBidResponse(HttpStatusCode.BadGateway,
+                    ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."), traceId);
             }
             catch (InvalidOperationException ex)
             {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+                return BulkBidResponse(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message), traceId);
             }
             catch (RegexMatchTimeoutException)
             {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+                return BulkBidResponse(HttpStatusCode.BadGateway,
+                    ApiResult.Fail("Could not parse the Amazon Ads page."), traceId);
             }
             catch (WebDriverException ex)
             {
-                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+                return BulkBidResponse(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message), traceId);
             }
+            catch (System.IO.IOException ex)
+            {
+                return BulkBidResponse(HttpStatusCode.InternalServerError,
+                    ApiResult.Fail("Could not write the bulk bid trace log: " + ex.Message), traceId);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return BulkBidResponse(HttpStatusCode.InternalServerError,
+                    ApiResult.Fail("Could not write the bulk bid trace log: " + ex.Message), traceId);
+            }
+        }
+
+        private IHttpActionResult BulkBidResponse(HttpStatusCode status, ApiResult body, string traceId)
+        {
+            var response = Request.CreateResponse(status, body);
+            response.Headers.Add("X-Agent-Trace-Id", traceId);
+            return ResponseMessage(response);
         }
 
         [HttpPost, Route("campaigns/auto")]

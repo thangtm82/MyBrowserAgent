@@ -56,7 +56,7 @@ The client passes `AccountInfo` from the current Chrome login. It sends no Cooki
 }
 ```
 
-Each entry needs a unique `targetId`, a nonempty `countryCodes` array, and a positive decimal `bid` string using a dot as the separator. The Agent sends only the `Targets` array in **one** Amazon Ads request through the signed-in Chrome session. `AccountInfo` supplies the headers; it must belong to the active Chrome login. `ApiResult.Data` contains the complete Amazon response. Inspect `failedTargetIds` and `bulkUpdateSummary` after every call: some targets may fail while others succeed. An HTTP error or malformed response is reported as an Agent error.
+Each entry needs a unique `targetId`, a nonempty `countryCodes` array, and a positive decimal `bid` string using a dot as the separator. The Agent sends only the `Targets` array in **one** Amazon Ads request through the signed-in Chrome session. `AccountInfo` supplies the headers; it must belong to the active Chrome login. `ApiResult.Data` contains the complete Amazon response. Inspect `failedTargetIds` and `bulkUpdateSummary` after every call: some targets may fail while others succeed. An HTTP error or malformed response is reported as an Agent error. Every bulk update attempt gets a trace ID in the `X-Agent-Trace-Id` response header. Its log is saved on the Agent machine as `logs/amazon-ads-target-bids-<UTC timestamp>-<trace ID>.log` beside `MyBrowserAgent.exe`. The file records the submitted Amazon request body, request headers with CSRF/client values redacted, browser URL, HTTP status, full raw JavaScript result and response body, parsing outcome, and any exception. Logging starts before the Amazon request; if the log file cannot be created, the update is not sent. For example, inspect the newest trace with `Get-ChildItem C:\BrowserAgent\logs\amazon-ads-target-bids-*.log | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content`.
 
 Desktop client example:
 
@@ -82,4 +82,4 @@ Console.WriteLine($"Updated: {result.BulkUpdateSummary.SuccessfulCount}; " +
     $"failed: {result.BulkUpdateSummary.FailedCount}");
 ```
 
-`AccountInfo` must include `EntityId`, `GlobalAccountId`, `MarketplaceId`, `ClientId`, and `CsrfToken`. Missing fields return HTTP 400. The account info includes session credentials: keep it private, avoid logging the request body, and refresh it with `start-session` if the session changes.
+`AccountInfo` must include `EntityId`, `GlobalAccountId`, `MarketplaceId`, `ClientId`, and `CsrfToken`. Missing fields return HTTP 400. The account info includes session credentials: keep it private and refresh it with `start-session` if the session changes. The bulk trace includes target IDs and bid amounts, but omits the Cookie and API key headers and redacts the CSRF token and client ID. Protect access to the `logs` directory.

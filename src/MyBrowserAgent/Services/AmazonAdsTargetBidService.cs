@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using MyBrowserAgent.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -47,18 +49,30 @@ namespace MyBrowserAgent.Services
                 driver => UpdateInBrowser(driver, body, targetId, request.AccountInfo));
         }
 
-        public JObject UpdateMany(BrowserService browser, TargetBidBulkUpdateRequest request)
+        public JObject UpdateMany(BrowserService browser, TargetBidBulkUpdateRequest request, string traceId)
         {
-            if (browser == null) throw new ArgumentNullException(nameof(browser));
-            if (request == null) throw new ArgumentException("Request body is required.");
-            AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-            var body = BuildManyPayload(request.Targets);
-            return browser.RunInTemporaryTab(CampaignUrl,
-                driver => UpdateInBrowser(driver, body, null, request.AccountInfo));
+            using (var trace = new BulkBidTrace(traceId, request?.AccountInfo))
+            {
+                try
+                {
+                    if (browser == null) throw new ArgumentNullException(nameof(browser));
+                    if (request == null) throw new ArgumentException("Request body is required.");
+                    AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+                    var body = BuildManyPayload(request.Targets);
+                    trace.Write("RequestBody", body.ToString(Formatting.None));
+                    return browser.RunInTemporaryTab(CampaignUrl,
+                        driver => UpdateInBrowser(driver, body, null, request.AccountInfo, trace));
+                }
+                catch (Exception ex)
+                {
+                    trace.WriteException(ex);
+                    throw;
+                }
+            }
         }
 
         private static JObject UpdateInBrowser(IWebDriver driver, JArray body,
-            string singleTargetId, AmazonAdsAccountInfo info)
+            string singleTargetId, AmazonAdsAccountInfo info, BulkBidTrace trace = null)
         {
             var headers = new Dictionary<string, string>
             {
@@ -78,6 +92,9 @@ namespace MyBrowserAgent.Services
                 headers["x-amzn-trace-id"] = "Root=" + info.TraceId +
                     ";Parent=" + info.SegmentId + ";Sampled=1";
 
+            trace?.Write("RequestHeaders", JsonConvert.SerializeObject(RedactHeaders(headers), Formatting.Indented));
+            trace?.Write("BrowserUrl", driver.Url);
+
             var timeouts = driver.Manage().Timeouts();
             var originalTimeout = timeouts.AsynchronousJavaScript;
             try
@@ -85,10 +102,15 @@ namespace MyBrowserAgent.Services
                 timeouts.AsynchronousJavaScript = TimeSpan.FromSeconds(60);
                 var raw = ((IJavaScriptExecutor)driver).ExecuteAsyncScript(
                     UpdateScript, headers, body.ToString(Formatting.None)) as string;
+                trace?.Write("RawJavaScriptResult", raw ?? "<null>");
                 if (string.IsNullOrWhiteSpace(raw))
                     throw new InvalidOperationException("Amazon Ads returned no target bid update result.");
 
                 var result = JObject.Parse(raw);
+                trace?.Write("HttpStatus", result.Value<int?>("status")?.ToString(CultureInfo.InvariantCulture) ?? "unavailable");
+                trace?.Write("ResponseBody", result.Value<string>("body") ?? "");
+                if (!string.IsNullOrEmpty(result.Value<string>("error")))
+                    trace?.Write("JavaScriptError", result.Value<string>("error"));
                 if (result.Value<bool?>("ok") != true)
                     throw new InvalidOperationException("Amazon Ads target bid update failed (HTTP " +
                         (result.Value<int?>("status")?.ToString() ?? "unavailable") +
@@ -98,11 +120,77 @@ namespace MyBrowserAgent.Services
                 ConfirmResponseShape(response);
                 if (singleTargetId != null)
                     ConfirmUpdate(response, singleTargetId);
+                trace?.Write("Result", "Parsed successfully. UpdatedTargets=" +
+                    ((JArray)response["updatedTargets"]).Count.ToString(CultureInfo.InvariantCulture) +
+                    "; FailedTargetIds=" +
+                    ((JArray)response["failedTargetIds"]).Count.ToString(CultureInfo.InvariantCulture));
                 return response;
             }
             finally
             {
                 timeouts.AsynchronousJavaScript = originalTimeout;
+            }
+        }
+
+        private static IDictionary<string, string> RedactHeaders(IDictionary<string, string> headers)
+        {
+            var safe = new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase);
+            foreach (var name in new[] {
+                "amazon-advertising-api-clientid",
+                "amazon-advertising-api-csrf-data",
+                "amazon-advertising-api-csrf-token"
+            })
+                if (safe.ContainsKey(name)) safe[name] = "[REDACTED]";
+            return safe;
+        }
+
+        private sealed class BulkBidTrace : IDisposable
+        {
+            private readonly StreamWriter _writer;
+            private readonly AmazonAdsAccountInfo _info;
+
+            public BulkBidTrace(string traceId, AmazonAdsAccountInfo info)
+            {
+                if (string.IsNullOrWhiteSpace(traceId))
+                    throw new ArgumentException("TraceId is required.");
+                _info = info;
+                var directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                Directory.CreateDirectory(directory);
+                var filename = "amazon-ads-target-bids-" +
+                    DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture) +
+                    "-" + traceId + ".log";
+                _writer = new StreamWriter(
+                    new FileStream(Path.Combine(directory, filename), FileMode.CreateNew,
+                        FileAccess.Write, FileShare.Read), new UTF8Encoding(false));
+                _writer.AutoFlush = true;
+                Write("TraceId", traceId);
+                Write("AgentEndpoint", "PUT /api/amazon-ads/targets/bids");
+                Write("AmazonEndpoint", "PUT https://advertising.amazon.com/a9g-api-gateway/cm/adsApi/targets/update");
+                Write("Account", "EntityId=" + (info?.EntityId ?? "") +
+                    "; GlobalAccountId=" + (info?.GlobalAccountId ?? "") +
+                    "; MarketplaceId=" + (info?.MarketplaceId ?? ""));
+            }
+
+            public void Write(string label, string value)
+            {
+                _writer.WriteLine("[" + DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) + "] " + label + ":");
+                _writer.WriteLine(value ?? "<null>");
+                _writer.WriteLine();
+            }
+
+            public void WriteException(Exception ex)
+            {
+                var detail = ex.ToString();
+                if (!string.IsNullOrEmpty(_info?.ClientId))
+                    detail = detail.Replace(_info.ClientId, "[REDACTED]");
+                if (!string.IsNullOrEmpty(_info?.CsrfToken))
+                    detail = detail.Replace(_info.CsrfToken, "[REDACTED]");
+                Write("Exception", detail);
+            }
+
+            public void Dispose()
+            {
+                _writer.Dispose();
             }
         }
 
