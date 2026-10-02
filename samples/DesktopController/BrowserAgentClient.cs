@@ -124,6 +124,15 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<string> CreatePortfolioAsync(
+            AmazonAdsAccountInfo accountInfo, string name)
+        {
+            var response = await SendAsync<string>(
+                HttpMethod.Post, "api/amazon-ads/portfolios",
+                new { AccountInfo = accountInfo, Name = name }, TimeSpan.FromMinutes(2));
+            return response.Data;
+        }
+
         public async Task<string> GetHtmlAsync()
         {
             var response = await SendAsync<string>(HttpMethod.Get, "api/browser/html", null);
