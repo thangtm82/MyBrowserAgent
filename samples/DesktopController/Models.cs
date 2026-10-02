@@ -12,6 +12,7 @@ namespace DesktopController
         public bool Success { get; set; }
         public T Data { get; set; }
         public string Error { get; set; }
+        public string TraceId { get; set; }
     }
 
     public sealed class AmazonAdsAccountInfo

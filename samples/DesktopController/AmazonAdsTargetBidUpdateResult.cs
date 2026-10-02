@@ -17,6 +17,9 @@ namespace DesktopController
 
     public sealed class AmazonAdsTargetBidUpdateResult
     {
+        [JsonIgnore]
+        public string TraceId { get; set; }
+
         [JsonProperty("updatedTargets")]
         public IList<UpdatedAmazonAdsTargetBid> UpdatedTargets { get; set; }
 

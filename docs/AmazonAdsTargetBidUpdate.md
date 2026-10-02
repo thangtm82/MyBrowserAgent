@@ -79,7 +79,9 @@ var updates = new List<AmazonAdsTargetBidUpdateItem>
 AmazonAdsAccountInfo info = await agent.StartAmazonAdsSessionAsync();
 AmazonAdsTargetBidUpdateResult result = await agent.UpdateTargetBidsAsync(info, updates);
 Console.WriteLine($"Updated: {result.BulkUpdateSummary.SuccessfulCount}; " +
-    $"failed: {result.BulkUpdateSummary.FailedCount}");
+    $"failed: {result.BulkUpdateSummary.FailedCount}; trace: {result.TraceId}");
 ```
+
+The desktop client exposes the trace ID as `result.TraceId` and includes it in HTTP error messages.
 
 `AccountInfo` must include `EntityId`, `GlobalAccountId`, `MarketplaceId`, `ClientId`, and `CsrfToken`. Missing fields return HTTP 400. The account info includes session credentials: keep it private and refresh it with `start-session` if the session changes. The bulk trace includes target IDs and bid amounts, but omits the Cookie and API key headers and redacts the CSRF token and client ID. Protect access to the `logs` directory.

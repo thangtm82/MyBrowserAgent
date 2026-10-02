@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -121,6 +122,7 @@ namespace DesktopController
                 HttpMethod.Put, "api/amazon-ads/targets/bids",
                 new { AccountInfo = accountInfo, Targets = targets },
                 TimeSpan.FromMinutes(3));
+            if (response.Data != null) response.Data.TraceId = response.TraceId;
             return response.Data;
         }
 
@@ -215,12 +217,17 @@ namespace DesktopController
                 using (var response = await _http.SendAsync(request, timeout.Token))
                 {
                     var json = await response.Content.ReadAsStringAsync();
+                    var traceId = response.Headers.TryGetValues("X-Agent-Trace-Id", out var traceValues)
+                        ? traceValues.FirstOrDefault() : null;
+                    var traceText = traceId == null ? "" : " (TraceId: " + traceId + ")";
                     if (!response.IsSuccessStatusCode)
-                        throw new InvalidOperationException(Name + ": HTTP " + (int)response.StatusCode + " - " + json);
+                        throw new InvalidOperationException(Name + ": HTTP " + (int)response.StatusCode +
+                            traceText + " - " + json);
 
                     var result = JsonConvert.DeserializeObject<ApiResponse<T>>(json);
-                    if (result == null) throw new InvalidOperationException(Name + ": invalid JSON response.");
-                    if (!result.Success) throw new InvalidOperationException(Name + ": " + result.Error);
+                    if (result == null) throw new InvalidOperationException(Name + ": invalid JSON response." + traceText);
+                    if (!result.Success) throw new InvalidOperationException(Name + ": " + result.Error + traceText);
+                    result.TraceId = traceId;
                     return result;
                 }
             }
