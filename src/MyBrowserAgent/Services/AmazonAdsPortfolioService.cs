@@ -66,6 +66,113 @@ namespace MyBrowserAgent.Services
                 driver => CreateInBrowser(driver, request.AccountInfo, body));
         }
 
+        // Updating the portfolio is the operation that returns portfolioExternalId.
+        private const string UpdateScript = @"
+            var done = arguments[arguments.length - 1];
+            var headers = arguments[0];
+            var body = arguments[1];
+            var entityId = arguments[2];
+            var portfolioId = arguments[3];
+            var controller = new AbortController();
+            var timer = setTimeout(function () { controller.abort(); }, 45000);
+            fetch('/a9g-api-gateway/cm/api/portfolios', {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: headers,
+                body: body,
+                referrer: location.origin + '/cm/portfolios/' + encodeURIComponent(portfolioId) +
+                    '/settings?entityId=' + encodeURIComponent(entityId) + '&ref=ALL_PORTFOLIOS',
+                signal: controller.signal
+            }).then(function (response) {
+                return response.text().then(function (text) {
+                    clearTimeout(timer);
+                    done(JSON.stringify({ ok: response.ok, status: response.status, body: text }));
+                });
+            }).catch(function (error) {
+                clearTimeout(timer);
+                done(JSON.stringify({ ok: false, error: String(error) }));
+            });";
+
+        public string UpdateAndGetExternalId(BrowserService browser, PortfolioExternalIdRequest request)
+        {
+            if (browser == null) throw new ArgumentNullException(nameof(browser));
+            if (request == null) throw new ArgumentException("Request body is required.");
+            AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+            if (string.IsNullOrWhiteSpace(request.PortfolioId))
+                throw new ArgumentException("PortfolioId is required.");
+            if (string.IsNullOrWhiteSpace(request.Name))
+                throw new ArgumentException("Name is required.");
+
+            var portfolioId = request.PortfolioId.Trim();
+            var body = new JObject
+            {
+                ["updatePortfoliosInputList"] = new JArray(new JObject
+                {
+                    ["name"] = request.Name.Trim(),
+                    ["budget"] = new JObject
+                    {
+                        ["budgetType"] = "NO_CAP",
+                        ["currencyCode"] = GetCurrencyCode(request.AccountInfo.MarketplaceId)
+                    },
+                    ["portfolioId"] = portfolioId
+                })
+            };
+
+            return browser.RunInTemporaryTab(CampaignUrl,
+                driver => UpdateInBrowser(driver, request.AccountInfo, portfolioId, body));
+        }
+
+        private static string UpdateInBrowser(IWebDriver driver, AmazonAdsAccountInfo info,
+            string portfolioId, JObject body)
+        {
+            ConfirmActiveAccount(driver, info);
+            var headers = new Dictionary<string, string>
+            {
+                ["accept"] = "application/json",
+                ["accept-language"] = "en-US,en;q=0.9",
+                ["content-type"] = "application/json",
+                ["amazon-ads-account-id"] = info.GlobalAccountId,
+                ["amazon-advertising-api-advertiserid"] = info.EntityId,
+                ["amazon-advertising-api-clientid"] = info.ClientId,
+                ["amazon-advertising-api-csrf-data"] = info.ClientId,
+                ["amazon-advertising-api-csrf-token"] = info.CsrfToken,
+                ["amazon-advertising-api-isimpersonator"] = "false",
+                ["amazon-advertising-api-marketplaceid"] = info.MarketplaceId,
+                ["prefer"] = "return=representation"
+            };
+
+            var timeouts = driver.Manage().Timeouts();
+            var originalTimeout = timeouts.AsynchronousJavaScript;
+            try
+            {
+                timeouts.AsynchronousJavaScript = TimeSpan.FromSeconds(60);
+                var raw = ((IJavaScriptExecutor)driver).ExecuteAsyncScript(
+                    UpdateScript, headers, body.ToString(Formatting.None), info.EntityId, portfolioId) as string;
+                if (string.IsNullOrWhiteSpace(raw))
+                    throw new InvalidOperationException(
+                        "Amazon Ads returned no portfolio update result. Check the portfolio before retrying.");
+
+                var result = JObject.Parse(raw);
+                if (result.Value<bool?>("ok") != true)
+                    throw new InvalidOperationException(
+                        "Amazon Ads portfolio update failed (HTTP " +
+                        (result.Value<int?>("status")?.ToString() ?? "unavailable") +
+                        "). Check the portfolio before retrying.");
+
+                var response = JObject.Parse(result.Value<string>("body") ?? "");
+                var outputs = response["updatePortfoliosOutputList"] as JArray;
+                var externalId = (outputs?.First as JObject)?["portfolio"]?["portfolioExternalId"]?.Value<string>();
+                if (string.IsNullOrWhiteSpace(externalId))
+                    throw new InvalidOperationException(
+                        "Amazon Ads did not return portfolioExternalId. Check the portfolio before retrying.");
+                return externalId;
+            }
+            finally
+            {
+                timeouts.AsynchronousJavaScript = originalTimeout;
+            }
+        }
+
         private static string CreateInBrowser(IWebDriver driver, AmazonAdsAccountInfo info, JObject body)
         {
             ConfirmActiveAccount(driver, info);

@@ -151,6 +151,16 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<string> UpdatePortfolioAndGetExternalIdAsync(
+            AmazonAdsAccountInfo accountInfo, string portfolioId, string name)
+        {
+            var response = await SendAsync<string>(
+                HttpMethod.Put, "api/amazon-ads/portfolios/external-id",
+                new { AccountInfo = accountInfo, PortfolioId = portfolioId, Name = name },
+                TimeSpan.FromMinutes(2));
+            return response.Data;
+        }
+
         public async Task<string> GetHtmlAsync()
         {
             var response = await SendAsync<string>(HttpMethod.Get, "api/browser/html", null);

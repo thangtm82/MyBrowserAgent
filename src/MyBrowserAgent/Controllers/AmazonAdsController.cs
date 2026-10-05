@@ -214,6 +214,37 @@ namespace MyBrowserAgent.Controllers
             }
         }
 
+        [HttpPut, Route("portfolios/external-id")]
+        public IHttpActionResult UpdatePortfolioAndGetExternalId(PortfolioExternalIdRequest request)
+        {
+            try
+            {
+                var externalId = _portfolios.UpdateAndGetExternalId(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(externalId));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
+                    "Amazon Ads returned invalid portfolio JSON. Check the portfolio before retrying."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
         [HttpPost, Route("start-session")]
         public IHttpActionResult StartSession()
         {
