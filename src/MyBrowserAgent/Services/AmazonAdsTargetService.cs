@@ -155,13 +155,25 @@ namespace MyBrowserAgent.Services
 
             if (!string.IsNullOrWhiteSpace(filter.MatchType))
             {
-                conditions.Add(new JObject
+                var values = new JArray();
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var part in filter.MatchType.Split(','))
                 {
-                    ["field"] = "matchType",
-                    ["values"] = new JArray(filter.MatchType.Trim()),
-                    ["comparisonOperator"] = "IN",
-                    ["not"] = false
-                });
+                    var value = part.Trim();
+                    if (value.Length > 0 && seen.Add(value))
+                        values.Add(value);
+                }
+
+                if (values.Count > 0)
+                {
+                    conditions.Add(new JObject
+                    {
+                        ["field"] = "matchType",
+                        ["values"] = values,
+                        ["comparisonOperator"] = "IN",
+                        ["not"] = false
+                    });
+                }
             }
 
             return new JObject
