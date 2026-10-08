@@ -20,6 +20,7 @@ namespace MyBrowserAgent.Controllers
         private readonly AmazonAdsPortfolioService _portfolios = new AmazonAdsPortfolioService();
         private readonly AmazonAdsAutoCampaignService _autoCampaigns = new AmazonAdsAutoCampaignService();
         private readonly AmazonAdsManualProductCampaignService _manualProductCampaigns = new AmazonAdsManualProductCampaignService();
+        private readonly AmazonAdsManualKeywordCampaignService _manualKeywordCampaigns = new AmazonAdsManualKeywordCampaignService();
 
         [HttpPost, Route("campaigns/filter")]
         public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
@@ -190,6 +191,37 @@ namespace MyBrowserAgent.Controllers
             try
             {
                 var result = _manualProductCampaigns.Create(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(result));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
+                    "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost, Route("campaigns/manual-keyword")]
+        public IHttpActionResult CreateManualKeywordCampaign(ManualKeywordCampaignCreateRequest request)
+        {
+            try
+            {
+                var result = _manualKeywordCampaigns.Create(BrowserAgentRuntime.Browser, request);
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)
