@@ -41,21 +41,18 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
-            var targets = new JArray();
+            var targets = new List<Target>();
             foreach (var keyword in request.Keywords)
                 foreach (var matchType in request.MatchTypes)
-                    targets.Add(new JObject
-                    {
-                        ["Keyword"] = keyword,
-                        ["MatchType"] = matchType
-                    });
+                    targets.Add(new Target { Keyword = keyword, MatchType = matchType });
 
-            // The original method uses JsonConvert.SerializeObject without a camel-case resolver.
-            var body = new JObject
+            var payload = new RecommendationRequest
             {
-                ["Asins"] = new JArray(request.Asin),
-                ["targets"] = targets
-            }.ToString(Formatting.None);
+                Asins = new List<string> { request.Asin },
+                targets = targets
+            };
+            // Preserve the property casing used by the supplied model.
+            var body = JsonConvert.SerializeObject(payload, Formatting.None);
             return browser.RunInTemporaryTab(CampaignUrl,
                 driver => FetchInBrowser(driver, request.AccountInfo, body));
         }

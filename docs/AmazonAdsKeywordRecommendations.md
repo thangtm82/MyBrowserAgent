@@ -17,7 +17,24 @@
 }
 ```
 
-The Agent creates one target for each keyword and match type pair. For this example it sends four targets. The attached method does not define the `RecommendationRequest` and `Target` classes. The Agent constructs `Asins`, `targets`, `Keyword` and `MatchType` from the member names referenced by that method, and uses `application/vnd.spkeywordsrecommendation.v5+json`. Confirm the exact body keys against your working request if Amazon rejects it. Chrome supplies its signed-in cookies. The Agent checks the active account against `AccountInfo` and reuses a `/cb` tab when available.
+The Agent creates one target for each keyword and match type pair. For this example it sends four targets. It serializes the supplied `RecommendationRequest` defaults and the keyword/match-type pairs with the original property casing. The upstream body is:
+
+```json
+{
+  "Asins": ["B012345678"],
+  "RecommendationType": "KEYWORDS_FOR_ASINS",
+  "targets": [
+    { "Keyword": "running shoes", "MatchType": "EXACT" },
+    { "Keyword": "running shoes", "MatchType": "PHRASE" },
+    { "Keyword": "walking shoes", "MatchType": "EXACT" },
+    { "Keyword": "walking shoes", "MatchType": "PHRASE" }
+  ],
+  "maxRecommendations": 0,
+  "biddingStrategy": "LEGACY_FOR_SALES"
+}
+```
+
+The attachment still omits the `Target` class; the Agent models the two members used by the original method, `Keyword` and `MatchType`. It sends `application/vnd.spkeywordsrecommendation.v5+json`. Chrome supplies its signed-in cookies. The Agent checks the active account against `AccountInfo` and reuses a `/cb` tab when available.
 
 On HTTP 200, the Agent flattens `keywordTargetList[*].bidInfo[*]` into `ApiResult.Data`, a list of `KeywordTarget` objects with `Keyword`, `MatchType`, and `Bid`. The bid is divided by 100 and rounded to two decimal places, matching the supplied function. If Amazon returns invalid JSON or an unsuccessful status, the Agent returns an error rather than a null list. An empty recommendation list returns `[]`.
 
