@@ -21,6 +21,7 @@ namespace MyBrowserAgent.Controllers
         private readonly AmazonAdsAutoCampaignService _autoCampaigns = new AmazonAdsAutoCampaignService();
         private readonly AmazonAdsManualProductCampaignService _manualProductCampaigns = new AmazonAdsManualProductCampaignService();
         private readonly AmazonAdsManualKeywordCampaignService _manualKeywordCampaigns = new AmazonAdsManualKeywordCampaignService();
+        private readonly AmazonAdsKeywordRecommendationService _keywordRecommendations = new AmazonAdsKeywordRecommendationService();
 
         [HttpPost, Route("campaigns/filter")]
         public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
@@ -201,6 +202,37 @@ namespace MyBrowserAgent.Controllers
             {
                 return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
                     "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
+            }
+            catch (WebDriverException ex)
+            {
+                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost, Route("targets/keywords/recommendations")]
+        public IHttpActionResult GetKeywordRecommendations(KeywordRecommendationRequest request)
+        {
+            try
+            {
+                var results = _keywordRecommendations.GetRecommendations(BrowserAgentRuntime.Browser, request);
+                return Ok(ApiResult.Ok(results));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Newtonsoft.Json.JsonException)
+            {
+                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
+                    "Amazon Ads returned invalid keyword recommendation JSON."));
             }
             catch (InvalidOperationException ex)
             {

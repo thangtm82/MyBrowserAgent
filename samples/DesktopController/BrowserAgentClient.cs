@@ -105,6 +105,17 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<IList<KeywordTarget>> GetKeywordRecommendationsAsync(
+            AmazonAdsAccountInfo accountInfo, string asin,
+            IList<string> keywords, IList<string> matchTypes)
+        {
+            var response = await SendAsync<List<KeywordTarget>>(
+                HttpMethod.Post, "api/amazon-ads/targets/keywords/recommendations",
+                new { AccountInfo = accountInfo, Asin = asin, Keywords = keywords, MatchTypes = matchTypes },
+                TimeSpan.FromMinutes(2));
+            return response.Data;
+        }
+
         public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidAsync(
             AmazonAdsAccountInfo accountInfo, string targetId, string countryCode, decimal bid)
         {
