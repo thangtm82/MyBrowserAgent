@@ -9,3 +9,4 @@ namespace MyBrowserAgent.Models
         public List<string> Keywords { get; set; }
         public List<string> MatchTypes { get; set; }
     }
+}
