@@ -158,6 +158,22 @@ namespace DesktopController
             return response.Data;
         }
 
+        public async Task<ManualKeywordCampaignCreateResult> CreateManualKeywordCampaignAsync(
+            AmazonAdsAccountInfo accountInfo, AdsManualFormData formData,
+            int formVersion = 185, FeatureFlag featureFlags = null)
+        {
+            var response = await SendAsync<ManualKeywordCampaignCreateResult>(
+                HttpMethod.Post, "api/amazon-ads/campaigns/manual-keyword",
+                new
+                {
+                    AccountInfo = accountInfo,
+                    FormVersion = formVersion,
+                    FormData = formData,
+                    FeatureFlags = featureFlags ?? new FeatureFlag()
+                }, TimeSpan.FromMinutes(2));
+            return response.Data;
+        }
+
         public async Task<string> CreatePortfolioAsync(
             AmazonAdsAccountInfo accountInfo, string name)
         {
