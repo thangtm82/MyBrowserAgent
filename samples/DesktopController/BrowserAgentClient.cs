@@ -74,28 +74,29 @@ namespace DesktopController
 
         public Task<IList<JObject>> FilterTargetsAsync(AmazonAdsAccountInfo accountInfo,
             decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
-            string matchType = null)
+            string matchType = null, string market = "US")
         {
             return FilterTargetsCoreAsync<JObject>(
-                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType);
+                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType, market);
         }
 
         public Task<IList<AmazonAdsTarget>> FilterTargetsTypedAsync(AmazonAdsAccountInfo accountInfo,
             decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
-            string matchType = null)
+            string matchType = null, string market = "US")
         {
             return FilterTargetsCoreAsync<AmazonAdsTarget>(
-                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType);
+                accountInfo, minAcos, maxAcos, startDate, endDate, offset, matchType, market);
         }
 
         private async Task<IList<T>> FilterTargetsCoreAsync<T>(AmazonAdsAccountInfo accountInfo,
             decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
-            string matchType)
+            string matchType, string market)
         {
             var response = await SendAsync<List<T>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
                 new
                 {
                     AccountInfo = accountInfo,
+                    Market = market,
                     MinAcos = minAcos,
                     MaxAcos = maxAcos,
                     StartDate = startDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -140,13 +141,14 @@ namespace DesktopController
 
         public async Task<AutoCampaignCreateResult> CreateAutoCampaignAsync(
             AmazonAdsAccountInfo accountInfo, AdsAutoFormData formData,
-            int formVersion = 186, JObject featureFlags = null)
+            int formVersion = 186, JObject featureFlags = null, string market = "US")
         {
             var response = await SendAsync<AutoCampaignCreateResult>(
                 HttpMethod.Post, "api/amazon-ads/campaigns/auto",
                 new
                 {
                     AccountInfo = accountInfo,
+                    Market = market,
                     FormVersion = formVersion,
                     FormData = formData,
                     FeatureFlags = featureFlags ?? new JObject()

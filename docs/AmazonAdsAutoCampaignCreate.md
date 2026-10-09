@@ -1,6 +1,6 @@
 # Create an Amazon Ads automatic campaign
 
-`POST /api/amazon-ads/campaigns/auto` submits the Sponsored Products form to `/a9g-api-gateway/atlas/submit` from the signed-in Selenium Chrome session. The browser supplies session cookies and Origin; the Agent sends the Amazon Ads headers from `AccountInfo`. The active `https://advertising.amazon.com/cb` tab is reused, or the Agent opens a temporary tab.
+`POST /api/amazon-ads/campaigns/auto` submits the Sponsored Products form to `/a9g-api-gateway/atlas/submit` from the signed-in Selenium Chrome session. The browser supplies session cookies and Origin; the Agent sends the Amazon Ads headers from `AccountInfo`. The active `/cb` tab for the selected market is reused, or the Agent opens a temporary tab on `advertising.amazon.com` (US) or `advertising.amazon.ca` (CA).
 
 Request `AmazonAdsAccountInfo` with `POST /api/amazon-ads/start-session` first. Send the Agent's `X-Api-Key` header and this JSON body:
 
@@ -16,6 +16,7 @@ Request `AmazonAdsAccountInfo` with `POST /api/amazon-ads/start-session` first. 
     "PageHitRequestId": "PAGE_HIT_REQUEST_ID",
     "SessionId": "SESSION_ID"
   },
+  "Market": "US",
   "FormVersion": 186,
   "FeatureFlags": {},
   "FormData": {
@@ -39,7 +40,7 @@ Request `AmazonAdsAccountInfo` with `POST /api/amazon-ads/start-session` first. 
 
 Use the actual ASIN, SKU, and start-date value expected by your existing form. The `ProductAds` class defines `Asin`, and `Product` adds `Merchant.Sku`. The Agent preserves the supplied form fields, supplies the defaults from `classes.txt`, serializes the upstream body with camel-case names, and keeps the hyphenated automatic targeting group keys. The upstream body has `formId: "sp"` and `experience: "campaign"`. `FormVersion` defaults to 186 and can be updated by the client if Amazon's form version changes. Because `FeatureFlag` was not defined in the supplied file, `FeatureFlags` accepts arbitrary JSON; pass the flags used by your original form if an empty object is insufficient.
 
-The Agent accepts US (`ATVPDKIKX0DER`) and CA (`A2EUQ1WTGCTBG2`) account info. If `FormData.Portfolio` is supplied and its budget has no currency, the Agent fills USD or CAD from the marketplace; a conflicting currency is rejected. The active Chrome page must show the same entity, global account, marketplace, and advertiser ID as `AccountInfo`.
+Set `Market` to `CA` and start a CA session for Canadian campaigns. `Market` defaults to `US`; the Agent requires the matching US (`ATVPDKIKX0DER`) or CA (`A2EUQ1WTGCTBG2`) `AccountInfo.MarketplaceId`. If `FormData.Portfolio` is supplied and its budget has no currency, the Agent fills USD or CAD from the marketplace; a conflicting currency is rejected. The active Chrome page must show the same entity, global account, marketplace, and advertiser ID as `AccountInfo`.
 
 `ApiResult.Data` contains `StatusCode`, `Succeeded`, and raw `Content` from Amazon. `ApiResult.Success` means that the Agent received an HTTP response; check `Data.Succeeded` for Amazon's result. Browser/network failures return an Agent error. The request is **not retried automatically**: after a timeout, check for a created campaign before sending it again.
 
@@ -64,6 +65,7 @@ var form = new AdsAutoFormData
     }
 };
 AutoCampaignCreateResult result = await agent.CreateAutoCampaignAsync(info, form);
+// For CA: start with StartAmazonAdsSessionAsync("CA") and pass market: "CA".
 Console.WriteLine($"Amazon HTTP {result.StatusCode}: {result.Content}");
 if (!result.Succeeded) throw new InvalidOperationException("Amazon rejected the campaign.");
 ```

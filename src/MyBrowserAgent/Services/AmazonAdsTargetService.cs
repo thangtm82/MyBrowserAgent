@@ -12,7 +12,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsTargetService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
         private const int PageSize = 50;
         private static readonly string[] Fields = {
             "targetId", "targetState", "calculatedStatusName", "calculatedStatusReasons",
@@ -50,7 +49,8 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            return browser.RunInTemporaryTab(CampaignUrl, driver => FetchOnePage(driver, filter));
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(filter.Market),
+                driver => FetchOnePage(driver, filter));
         }
 
         private static IList<JObject> FetchOnePage(IWebDriver driver, TargetFilterRequest filter)
@@ -197,6 +197,7 @@ namespace MyBrowserAgent.Services
         {
             if (filter == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(filter.AccountInfo);
+            AmazonAdsMarket.ValidateMarketplace(filter.Market, filter.AccountInfo.MarketplaceId);
             if (!filter.MinAcos.HasValue || !filter.MaxAcos.HasValue ||
                 filter.MinAcos < 0 || filter.MinAcos > filter.MaxAcos)
                 throw new ArgumentException("MinAcos and MaxAcos must be nonnegative and MinAcos <= MaxAcos.");

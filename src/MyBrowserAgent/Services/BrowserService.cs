@@ -18,8 +18,6 @@ namespace MyBrowserAgent.Services
         private readonly AgentConfig _config;
         private readonly object _sync = new object();
         private ChromeDriver _driver;
-        private const string AmazonCampaignManagerUrlPrefix =
-            "https://advertising.amazon.com/cb";
         private static readonly Regex ProfileArgument = new Regex(
             @"(?:^|\s)(?:""--user-data-dir=(?<whole>[^""]+)""|--user-data-dir=(?:""(?<quoted>[^""]+)""|(?<plain>[^\s""]+)))",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -300,8 +298,8 @@ namespace MyBrowserAgent.Services
                 var driver = Driver;
                 // Reuse the active Amazon Ads /cb tab, including on failures.
                 // The action is responsible for its own navigation, if any.
-                if (driver.Url.StartsWith(AmazonCampaignManagerUrlPrefix,
-                    StringComparison.OrdinalIgnoreCase))
+                if (AmazonAdsMarket.IsCampaignUrl(url) &&
+                    driver.Url.StartsWith(url, StringComparison.OrdinalIgnoreCase))
                     return action(driver);
 
                 var original = driver.CurrentWindowHandle;

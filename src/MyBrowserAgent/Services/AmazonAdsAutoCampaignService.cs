@@ -11,9 +11,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsAutoCampaignService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
-        private const string UsMarketplaceId = "ATVPDKIKX0DER";
-        private const string CaMarketplaceId = "A2EUQ1WTGCTBG2";
         private static readonly JsonSerializerSettings BodySettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
@@ -55,7 +52,7 @@ namespace MyBrowserAgent.Services
                 FeatureFlags = request.FeatureFlags ?? new JObject()
             };
             var body = JsonConvert.SerializeObject(payload, BodySettings);
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(request.Market),
                 driver => SubmitInBrowser(driver, request.AccountInfo, body));
         }
 
@@ -121,6 +118,7 @@ namespace MyBrowserAgent.Services
         {
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+            AmazonAdsMarket.ValidateMarketplace(request.Market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.AccountInfo.AdvertiserId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.PageHitRequestId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.SessionId))
@@ -146,7 +144,7 @@ namespace MyBrowserAgent.Services
                     product.Merchant == null || string.IsNullOrWhiteSpace(product.Merchant.Sku))
                     throw new ArgumentException("Each product requires Asin and Merchant.Sku.");
 
-            var expectedCurrency = GetCurrencyCode(request.AccountInfo.MarketplaceId);
+            var expectedCurrency = AmazonAdsMarket.GetCurrencyCode(request.Market);
             if (form.Portfolio != null)
             {
                 if (form.Portfolio.Budget == null)
@@ -157,15 +155,6 @@ namespace MyBrowserAgent.Services
                 else if (!string.Equals(currency, expectedCurrency, StringComparison.OrdinalIgnoreCase))
                     throw new ArgumentException("Portfolio currency must be " + expectedCurrency + " for this marketplace.");
             }
-        }
-
-        private static string GetCurrencyCode(string marketplaceId)
-        {
-            if (string.Equals(marketplaceId, UsMarketplaceId, StringComparison.Ordinal))
-                return "USD";
-            if (string.Equals(marketplaceId, CaMarketplaceId, StringComparison.Ordinal))
-                return "CAD";
-            throw new ArgumentException("Automatic campaign creation supports US and CA marketplaces only.");
         }
 
         private static void ConfirmActiveAccount(IWebDriver driver, AmazonAdsAccountInfo expected)

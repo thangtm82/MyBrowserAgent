@@ -8,7 +8,6 @@ namespace MyBrowserAgent.Services
     public sealed class AmazonAdsAccountInfoService
     {
         private const string CampaignUrl = "https://advertising.amazon.com/cb";
-        private const string CanadaCampaignUrl = "https://advertising.amazon.ca/cb";
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         public AmazonAdsAccountInfo GetAccountInfo(BrowserService browser)
@@ -32,13 +31,7 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
 
-            string url;
-            switch (market?.Trim().ToUpperInvariant())
-            {
-                case "US": url = CampaignUrl; break;
-                case "CA": url = CanadaCampaignUrl; break;
-                default: throw new ArgumentException("market must be US or CA.", nameof(market));
-            }
+            var url = AmazonAdsMarket.GetCampaignUrl(market);
 
             return browser.RunInNewSession(url, driver =>
             {
