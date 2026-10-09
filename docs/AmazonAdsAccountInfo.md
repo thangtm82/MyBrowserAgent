@@ -23,16 +23,17 @@ These fields include session credentials. Keep the API on a private network and 
 
 ## Start a new Amazon Ads session
 
-`POST /api/amazon-ads/start-session` has no body and requires the usual `X-Api-Key`. It stops the Chrome/WebDriver session controlled by this Agent, launches a new one with the **same persistent Chrome profile**, and navigates its current tab to `https://advertising.amazon.com/cb`. Existing tabs in the Agent's Chrome session are closed. Cookies and the saved profile remain on disk.
+`POST /api/amazon-ads/start-session` has no body and requires the usual `X-Api-Key`. Its optional query parameter `market` accepts `US` (default) or `CA`. The Agent stops its Chrome/WebDriver session, launches a new one with the **same persistent Chrome profile**, and navigates to `https://advertising.amazon.com/cb` for US or `https://advertising.amazon.ca/cb` for CA. Unsupported values return HTTP 400 without restarting Chrome. Existing tabs in the Agent's Chrome session are closed. Cookies and the saved profile remain on disk.
 
 The Agent waits up to 15 seconds after navigation for `EntityId`, `GlobalAccountId`, `MarketplaceId`, `ClientId`, and `CsrfToken`. On success it returns `ApiResult.Data` as the same `AmazonAdsAccountInfo` model shown above and leaves the `/cb` tab open. If the account fields cannot be found, the API reports an error and leaves Chrome open so you can sign in or inspect the page.
 
 Desktop client:
 
 ```csharp
-AmazonAdsAccountInfo info = await agent.StartAmazonAdsSessionAsync();
-Console.WriteLine(info.EntityId);
-Console.WriteLine(info.GlobalAccountId);
+AmazonAdsAccountInfo info = await agent.StartAmazonAdsSessionAsync(); // US
+AmazonAdsAccountInfo canadaInfo = await agent.StartAmazonAdsSessionAsync("CA");
+Console.WriteLine(canadaInfo.EntityId);
+Console.WriteLine(canadaInfo.GlobalAccountId);
 ```
 
 This creates a fresh Selenium browser session, while using the stored Amazon Ads login from the same Chrome profile. It does not create a new Amazon user account.

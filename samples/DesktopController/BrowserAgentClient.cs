@@ -41,10 +41,11 @@ namespace DesktopController
         public Task FillAsync(string selector, string value, string selectorType = "css") => SendNoResultAsync(HttpMethod.Post, "api/browser/fill", new { Selector = selector, SelectorType = selectorType, Value = value });
         public Task SendKeysAsync(string selector, string value, string selectorType = "css") => SendNoResultAsync(HttpMethod.Post, "api/browser/sendkeys", new { Selector = selector, SelectorType = selectorType, Value = value });
 
-        public async Task<AmazonAdsAccountInfo> StartAmazonAdsSessionAsync()
+        public async Task<AmazonAdsAccountInfo> StartAmazonAdsSessionAsync(string market = "US")
         {
             var response = await SendAsync<AmazonAdsAccountInfo>(
-                HttpMethod.Post, "api/amazon-ads/start-session", null, TimeSpan.FromMinutes(5));
+                HttpMethod.Post, "api/amazon-ads/start-session?market=" + Uri.EscapeDataString(market ?? "US"),
+                null, TimeSpan.FromMinutes(5));
             return response.Data;
         }
 
