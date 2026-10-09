@@ -11,8 +11,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsManualKeywordCampaignService
     {
-        private const string UsMarketplaceId = "ATVPDKIKX0DER";
-        private const string CaMarketplaceId = "A2EUQ1WTGCTBG2";
         private static readonly JsonSerializerSettings BodySettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
@@ -46,8 +44,7 @@ namespace MyBrowserAgent.Services
             BrowserService browser, ManualKeywordCampaignCreateRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
-            Validate(request);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
+            Validate(request, market);
 
             var payload = new AdsManualFormRequest
             {
@@ -118,7 +115,7 @@ namespace MyBrowserAgent.Services
             }
         }
 
-        private static void Validate(ManualKeywordCampaignCreateRequest request)
+        private static void Validate(ManualKeywordCampaignCreateRequest request, string market)
         {
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
@@ -158,20 +155,11 @@ namespace MyBrowserAgent.Services
                     double.IsNaN(target.Bid) || double.IsInfinity(target.Bid))
                     throw new ArgumentException("Each keyword target requires Keyword, MatchType and a positive Bid.");
 
-            var currency = GetCurrencyCode(request.AccountInfo.MarketplaceId);
+            var currency = AmazonAdsMarket.GetCurrencyCode(market);
             if (form.Portfolio.Budget == null)
                 form.Portfolio.Budget = new Budget();
-            // The source function always takes portfolio currency from the selected marketplace.
+            // Use the currency for the selected market.
             form.Portfolio.Budget.CurrencyCode = currency;
-        }
-
-        private static string GetCurrencyCode(string marketplaceId)
-        {
-            if (string.Equals(marketplaceId, UsMarketplaceId, StringComparison.Ordinal))
-                return "USD";
-            if (string.Equals(marketplaceId, CaMarketplaceId, StringComparison.Ordinal))
-                return "CAD";
-            throw new ArgumentException("Manual keyword campaign creation supports US and CA marketplaces only.");
         }
 
         private static void ConfirmActiveAccount(IWebDriver driver, AmazonAdsAccountInfo expected)

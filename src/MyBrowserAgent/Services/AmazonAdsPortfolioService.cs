@@ -10,8 +10,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsPortfolioService
     {
-        private const string UsMarketplaceId = "ATVPDKIKX0DER";
-        private const string CaMarketplaceId = "A2EUQ1WTGCTBG2";
 
         // Chrome supplies its session cookies and the browser-owned request headers.
         private const string CreateScript = @"
@@ -43,11 +41,10 @@ namespace MyBrowserAgent.Services
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ArgumentException("Name is required.");
 
-            var currencyCode = GetCurrencyCode(request.AccountInfo.MarketplaceId);
+            var currencyCode = AmazonAdsMarket.GetCurrencyCode(market);
             var body = new JObject
             {
                 ["createPortfoliosInputList"] = new JArray(new JObject
@@ -98,7 +95,6 @@ namespace MyBrowserAgent.Services
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.PortfolioId))
                 throw new ArgumentException("PortfolioId is required.");
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -113,7 +109,7 @@ namespace MyBrowserAgent.Services
                     ["budget"] = new JObject
                     {
                         ["budgetType"] = "NO_CAP",
-                        ["currencyCode"] = GetCurrencyCode(request.AccountInfo.MarketplaceId)
+                        ["currencyCode"] = AmazonAdsMarket.GetCurrencyCode(market)
                     },
                     ["portfolioId"] = portfolioId
                 })
@@ -249,13 +245,5 @@ namespace MyBrowserAgent.Services
                     "AccountInfo does not match the active Amazon Ads account in Chrome. Refresh account info before creating a portfolio.");
         }
 
-        private static string GetCurrencyCode(string marketplaceId)
-        {
-            if (string.Equals(marketplaceId, UsMarketplaceId, StringComparison.Ordinal))
-                return "USD";
-            if (string.Equals(marketplaceId, CaMarketplaceId, StringComparison.Ordinal))
-                return "CAD";
-            throw new ArgumentException("Portfolio creation supports US and CA marketplaces only.");
-        }
     }
 }

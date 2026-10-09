@@ -118,7 +118,6 @@ namespace MyBrowserAgent.Services
         {
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.AccountInfo.AdvertiserId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.PageHitRequestId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.SessionId))

@@ -1,6 +1,6 @@
 # Create a Sponsored Products manual product targeting campaign
 
-Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the active Chrome session. Unsupported `market` values return HTTP 400; the market-to-`MarketplaceId` check is temporarily disabled.
 
 `POST /api/amazon-ads/campaigns/manual-product` sends the supplied form to `/a9g-api-gateway/atlas/submit` in the signed-in Selenium Chrome session. Supply `X-Api-Key` and `AccountInfo` from `POST /api/amazon-ads/start-session`.
 
@@ -38,7 +38,7 @@ Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`ht
 }
 ```
 
-The Agent sends `formId: "sp"`, `experience: "campaign"`, `targetingType: "MANUAL"`, and `manualTargetingType: "PRODUCT"`. Form version defaults to 185. `FeatureFlags` is an arbitrary JSON object because the supplied `FeatureFlag` type was not defined; pass your real flags if necessary. Other form data fields, including placement adjustments and `NegativeProductTargets`, are available in `AdsManualProductTargetingFormData`. An optional `ProductTarget.Price` is also supported. The Agent fills `Portfolio.Budget.CurrencyCode` from the selected marketplace (USD for US, CAD for CA), matching the supplied function.
+The Agent sends `formId: "sp"`, `experience: "campaign"`, `targetingType: "MANUAL"`, and `manualTargetingType: "PRODUCT"`. Form version defaults to 185. `FeatureFlags` is an arbitrary JSON object because the supplied `FeatureFlag` type was not defined; pass your real flags if necessary. Other form data fields, including placement adjustments and `NegativeProductTargets`, are available in `AdsManualProductTargetingFormData`. An optional `ProductTarget.Price` is also supported. The Agent fills `Portfolio.Budget.CurrencyCode` from the selected market (USD for US, CAD for CA), matching the supplied function.
 
 The Agent verifies that the selected Chrome account matches `AccountInfo`, uses the current tab on the selected market's `/cb` URL, and sends the request with Chrome's cookies. `ApiResult.Data` has `StatusCode`, `Succeeded`, and raw `Content`. Check `Data.Succeeded` and the Amazon response content; an Agent HTTP 200 only means Amazon returned a response. The request is not retried automatically. If a timeout occurs, check Amazon Ads before submitting again.
 

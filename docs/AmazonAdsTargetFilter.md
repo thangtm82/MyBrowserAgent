@@ -1,6 +1,6 @@
 # Filter Amazon Ads targets
 
-Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the active Chrome session. Unsupported `market` values return HTTP 400; the market-to-`MarketplaceId` check is temporarily disabled.
 
 `POST /api/amazon-ads/targets/filter` runs the `TargetsReport` request from `requestTarget.txt` inside the signed-in Selenium Chrome session. It uses client-supplied `AccountInfo` in the Amazon Ads headers and browser cookies for the request. The Agent uses the current tab. If it is on a different URL, the Agent navigates it to `/cb` on `advertising.amazon.com` (US) or `advertising.amazon.ca` (CA) and leaves it open.
 
@@ -27,7 +27,9 @@ The request accepts inclusive ACoS bounds, inclusive calendar dates, a required 
 
 `MatchType` accepts one value or comma-separated values. For example, `"TARGETING_EXPRESSION_PREDEFINED, ANOTHER_MATCH_TYPE"` adds `{"field":"matchType","values":["TARGETING_EXPRESSION_PREDEFINED","ANOTHER_MATCH_TYPE"],"comparisonOperator":"IN","not":false}` to `filter.and`. Replace `ANOTHER_MATCH_TYPE` with a valid value from your account. The Agent trims each value, skips empty entries and removes exact duplicates while preserving order. A missing value or a string containing only spaces and commas adds no match type condition.
 
-Pass `?market=CA` (or the existing body `Market: "CA"`) when using `StartAmazonAdsSessionAsync("CA")` and CA `AccountInfo`; otherwise `US` is the default. Query `market` takes precedence over the body field. A mismatch between `Market` and `AccountInfo.MarketplaceId` returns HTTP 400.
+Pass `?market=CA` (or the existing body `Market: "CA"`) when using `StartAmazonAdsSessionAsync("CA")` and CA `AccountInfo`; otherwise `US` is the default. Query `market` takes precedence over the body field.
+
+The report uses `currencyOfView` from `AmazonAdsMarket.GetCurrencyCode(market)` (USD for US, CAD for CA).
 
 Each call sends exactly one Amazon Ads request with `offsetPagination.size = 50` and the supplied `Offset`. The Agent returns only that page's `report.data` rows in the usual `ApiResult.Data` list; no matches returns `[]`. `report.numberOfRecords` is the total for the filter, not the number of rows returned by this call. The client chooses the next offset (for example, `0`, `50`, `100`) and makes another API call when it wants the next page. A mismatched offset or malformed row raises an error.
 

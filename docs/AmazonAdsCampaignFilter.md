@@ -1,6 +1,8 @@
 # Filter Amazon Ads campaigns
 
-Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+The report uses `currencyOfView` from `AmazonAdsMarket.GetCurrencyCode(market)` (USD for US, CAD for CA).
+
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the active Chrome session. Unsupported `market` values return HTTP 400; the market-to-`MarketplaceId` check is temporarily disabled.
 
 `POST /api/amazon-ads/campaigns/filter` uses the client-supplied `AccountInfo` for Amazon Ads headers and executes `fetch` in the signed-in Selenium Chrome session. Chrome supplies the logged-in cookies. When the current tab is not on the required `/cb` URL, the Agent navigates that tab there and leaves it open after the request.
 

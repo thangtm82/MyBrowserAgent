@@ -20,6 +20,7 @@ namespace MyBrowserAgent.Services
                 source => !string.IsNullOrEmpty(Read(source, "entityId")),
                 15);
             var info = Parse(html);
+            info.Currency = AmazonAdsMarket.GetCurrencyCode(market);
             if (string.IsNullOrEmpty(info.EntityId))
                 throw new InvalidOperationException(
                     "EntityId was not found on the Amazon Ads page; check the Chrome login or page format.");
@@ -38,6 +39,7 @@ namespace MyBrowserAgent.Services
                 do
                 {
                     var info = Parse(driver.PageSource);
+                    info.Currency = AmazonAdsMarket.GetCurrencyCode(market);
                     if (!string.IsNullOrEmpty(info.EntityId) &&
                         !string.IsNullOrEmpty(info.GlobalAccountId) &&
                         !string.IsNullOrEmpty(info.MarketplaceId) &&
