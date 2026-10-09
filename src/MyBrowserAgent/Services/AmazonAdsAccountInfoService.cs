@@ -17,12 +17,16 @@ namespace MyBrowserAgent.Services
             // provides the logged-in session; no Cookie header or separate HTTP request is used.
             var html = browser.ReadPageSourceInTemporaryTab(
                 AmazonAdsMarket.GetCampaignUrl(market),
-                source => !string.IsNullOrEmpty(Read(source, "entityId")),
+                source => !string.IsNullOrEmpty(Read(source, "entityId")) &&
+                    !string.IsNullOrEmpty(ReadCurrency(source)),
                 15);
             var info = Parse(html);
             if (string.IsNullOrEmpty(info.EntityId))
                 throw new InvalidOperationException(
                     "EntityId was not found on the Amazon Ads page; check the Chrome login or page format.");
+            if (string.IsNullOrEmpty(info.Currency))
+                throw new InvalidOperationException(
+                    "selectedCurrency.code was not found on the Amazon Ads page; check the page format.");
             return info;
         }
 
@@ -42,7 +46,8 @@ namespace MyBrowserAgent.Services
                         !string.IsNullOrEmpty(info.GlobalAccountId) &&
                         !string.IsNullOrEmpty(info.MarketplaceId) &&
                         !string.IsNullOrEmpty(info.ClientId) &&
-                        !string.IsNullOrEmpty(info.CsrfToken))
+                        !string.IsNullOrEmpty(info.CsrfToken) &&
+                        !string.IsNullOrEmpty(info.Currency))
                         return info;
 
                     if (DateTime.UtcNow >= deadline) break;
@@ -50,7 +55,7 @@ namespace MyBrowserAgent.Services
                 } while (true);
 
                 throw new InvalidOperationException(
-                    "Amazon Ads account fields are missing; sign in to Chrome or check the page format.");
+                    "Amazon Ads account fields (including selectedCurrency.code) are missing; sign in to Chrome or check the page format.");
             });
         }
 
@@ -69,8 +74,24 @@ namespace MyBrowserAgent.Services
                 AdvertiserId = Read(html, "advertiserId"),
                 EntityId = Read(html, "entityId"),
                 GlobalAccountId = Read(html, "globalAccountId"),
-                MarketplaceId = Read(html, "marketplaceId")
+                MarketplaceId = Read(html, "marketplaceId"),
+                Currency = ReadCurrency(html)
             };
+        }
+
+        private static string ReadCurrency(string html)
+        {
+            // Restrict "code" to the selectedCurrency object so another page setting
+            // cannot be mistaken for the account's selected currency.
+            var selected = Regex.Match(html,
+                @"\bselectedCurrency['""]?\s*:\s*\{(?<body>[^{}]*)\}",
+                RegexOptions.None, RegexTimeout);
+            if (!selected.Success) return null;
+
+            var code = Regex.Match(selected.Groups["body"].Value,
+                @"\bcode['""]?\s*:\s*(['""])(?<value>[^'""\r\n]+)\1",
+                RegexOptions.None, RegexTimeout);
+            return code.Success ? code.Groups["value"].Value : null;
         }
 
         private static string Read(string html, string name)
