@@ -41,10 +41,10 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ error: String(error) }));
             });";
 
-        public AutoCampaignCreateResult Create(BrowserService browser, AutoCampaignCreateRequest request)
+        public AutoCampaignCreateResult Create(BrowserService browser, AutoCampaignCreateRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
-            Validate(request);
+            Validate(request, market);
             var payload = new AdsAutoFormRequest
             {
                 FormVersion = request.FormVersion,
@@ -52,7 +52,7 @@ namespace MyBrowserAgent.Services
                 FeatureFlags = request.FeatureFlags ?? new JObject()
             };
             var body = JsonConvert.SerializeObject(payload, BodySettings);
-            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(request.Market),
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => SubmitInBrowser(driver, request.AccountInfo, body));
         }
 
@@ -114,11 +114,11 @@ namespace MyBrowserAgent.Services
             }
         }
 
-        private static void Validate(AutoCampaignCreateRequest request)
+        private static void Validate(AutoCampaignCreateRequest request, string market)
         {
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-            AmazonAdsMarket.ValidateMarketplace(request.Market, request.AccountInfo.MarketplaceId);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.AccountInfo.AdvertiserId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.PageHitRequestId) ||
                 string.IsNullOrWhiteSpace(request.AccountInfo.SessionId))
@@ -144,7 +144,7 @@ namespace MyBrowserAgent.Services
                     product.Merchant == null || string.IsNullOrWhiteSpace(product.Merchant.Sku))
                     throw new ArgumentException("Each product requires Asin and Merchant.Sku.");
 
-            var expectedCurrency = AmazonAdsMarket.GetCurrencyCode(request.Market);
+            var expectedCurrency = AmazonAdsMarket.GetCurrencyCode(market);
             if (form.Portfolio != null)
             {
                 if (form.Portfolio.Budget == null)

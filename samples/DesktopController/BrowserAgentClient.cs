@@ -44,22 +44,22 @@ namespace DesktopController
         public async Task<AmazonAdsAccountInfo> StartAmazonAdsSessionAsync(string market = "US")
         {
             var response = await SendAsync<AmazonAdsAccountInfo>(
-                HttpMethod.Post, "api/amazon-ads/start-session?market=" + Uri.EscapeDataString(market ?? "US"),
+                HttpMethod.Post, AdsPath("start-session", market),
                 null, TimeSpan.FromMinutes(5));
             return response.Data;
         }
 
-        public async Task<AmazonAdsAccountInfo> GetAmazonAdsAccountInfoAsync()
+        public async Task<AmazonAdsAccountInfo> GetAmazonAdsAccountInfoAsync(string market = "US")
         {
-            var response = await SendAsync<AmazonAdsAccountInfo>(HttpMethod.Post, "api/amazon-ads/account-info", null);
+            var response = await SendAsync<AmazonAdsAccountInfo>(HttpMethod.Post, AdsPath("account-info", market), null);
             return response.Data;
         }
 
         public async Task<IList<JObject>> FilterCampaignsAsync(AmazonAdsAccountInfo accountInfo,
             string targetType, decimal minAcos, decimal maxAcos,
-            DateTime startDate, DateTime endDate)
+            DateTime startDate, DateTime endDate, string market = "US")
         {
-            var response = await SendAsync<List<JObject>>(HttpMethod.Post, "api/amazon-ads/campaigns/filter",
+            var response = await SendAsync<List<JObject>>(HttpMethod.Post, AdsPath("campaigns/filter", market),
                 new
                 {
                     AccountInfo = accountInfo,
@@ -92,7 +92,7 @@ namespace DesktopController
             decimal minAcos, decimal maxAcos, DateTime startDate, DateTime endDate, int offset,
             string matchType, string market)
         {
-            var response = await SendAsync<List<T>>(HttpMethod.Post, "api/amazon-ads/targets/filter",
+            var response = await SendAsync<List<T>>(HttpMethod.Post, AdsPath("targets/filter", market),
                 new
                 {
                     AccountInfo = accountInfo,
@@ -109,30 +109,30 @@ namespace DesktopController
 
         public async Task<IList<KeywordTarget>> GetKeywordRecommendationsAsync(
             AmazonAdsAccountInfo accountInfo, string asin,
-            IList<string> keywords, IList<string> matchTypes)
+            IList<string> keywords, IList<string> matchTypes, string market = "US")
         {
             var response = await SendAsync<List<KeywordTarget>>(
-                HttpMethod.Post, "api/amazon-ads/targets/keywords/recommendations",
+                HttpMethod.Post, AdsPath("targets/keywords/recommendations", market),
                 new { AccountInfo = accountInfo, Asin = asin, Keywords = keywords, MatchTypes = matchTypes },
                 TimeSpan.FromMinutes(2));
             return response.Data;
         }
 
         public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidAsync(
-            AmazonAdsAccountInfo accountInfo, string targetId, string countryCode, decimal bid)
+            AmazonAdsAccountInfo accountInfo, string targetId, string countryCode, decimal bid, string market = "US")
         {
             var response = await SendAsync<AmazonAdsTargetBidUpdateResult>(
-                HttpMethod.Put, "api/amazon-ads/targets/bid",
+                HttpMethod.Put, AdsPath("targets/bid", market),
                 new { AccountInfo = accountInfo, TargetId = targetId, CountryCode = countryCode, Bid = bid },
                 TimeSpan.FromMinutes(3));
             return response.Data;
         }
 
         public async Task<AmazonAdsTargetBidUpdateResult> UpdateTargetBidsAsync(
-            AmazonAdsAccountInfo accountInfo, IList<AmazonAdsTargetBidUpdateItem> targets)
+            AmazonAdsAccountInfo accountInfo, IList<AmazonAdsTargetBidUpdateItem> targets, string market = "US")
         {
             var response = await SendAsync<AmazonAdsTargetBidUpdateResult>(
-                HttpMethod.Put, "api/amazon-ads/targets/bids",
+                HttpMethod.Put, AdsPath("targets/bids", market),
                 new { AccountInfo = accountInfo, Targets = targets },
                 TimeSpan.FromMinutes(3));
             if (response.Data != null) response.Data.TraceId = response.TraceId;
@@ -144,7 +144,7 @@ namespace DesktopController
             int formVersion = 186, JObject featureFlags = null, string market = "US")
         {
             var response = await SendAsync<AutoCampaignCreateResult>(
-                HttpMethod.Post, "api/amazon-ads/campaigns/auto",
+                HttpMethod.Post, AdsPath("campaigns/auto", market),
                 new
                 {
                     AccountInfo = accountInfo,
@@ -158,10 +158,10 @@ namespace DesktopController
 
         public async Task<ManualProductCampaignCreateResult> CreateManualProductCampaignAsync(
             AmazonAdsAccountInfo accountInfo, AdsManualProductTargetingFormData formData,
-            int formVersion = 185, JObject featureFlags = null)
+            int formVersion = 185, JObject featureFlags = null, string market = "US")
         {
             var response = await SendAsync<ManualProductCampaignCreateResult>(
-                HttpMethod.Post, "api/amazon-ads/campaigns/manual-product",
+                HttpMethod.Post, AdsPath("campaigns/manual-product", market),
                 new
                 {
                     AccountInfo = accountInfo,
@@ -174,10 +174,10 @@ namespace DesktopController
 
         public async Task<ManualKeywordCampaignCreateResult> CreateManualKeywordCampaignAsync(
             AmazonAdsAccountInfo accountInfo, AdsManualFormData formData,
-            int formVersion = 185, FeatureFlag featureFlags = null)
+            int formVersion = 185, FeatureFlag featureFlags = null, string market = "US")
         {
             var response = await SendAsync<ManualKeywordCampaignCreateResult>(
-                HttpMethod.Post, "api/amazon-ads/campaigns/manual-keyword",
+                HttpMethod.Post, AdsPath("campaigns/manual-keyword", market),
                 new
                 {
                     AccountInfo = accountInfo,
@@ -189,19 +189,19 @@ namespace DesktopController
         }
 
         public async Task<string> CreatePortfolioAsync(
-            AmazonAdsAccountInfo accountInfo, string name)
+            AmazonAdsAccountInfo accountInfo, string name, string market = "US")
         {
             var response = await SendAsync<string>(
-                HttpMethod.Post, "api/amazon-ads/portfolios",
+                HttpMethod.Post, AdsPath("portfolios", market),
                 new { AccountInfo = accountInfo, Name = name }, TimeSpan.FromMinutes(2));
             return response.Data;
         }
 
         public async Task<string> UpdatePortfolioAndGetExternalIdAsync(
-            AmazonAdsAccountInfo accountInfo, string portfolioId, string name)
+            AmazonAdsAccountInfo accountInfo, string portfolioId, string name, string market = "US")
         {
             var response = await SendAsync<string>(
-                HttpMethod.Put, "api/amazon-ads/portfolios/external-id",
+                HttpMethod.Put, AdsPath("portfolios/external-id", market),
                 new { AccountInfo = accountInfo, PortfolioId = portfolioId, Name = name },
                 TimeSpan.FromMinutes(2));
             return response.Data;
@@ -287,6 +287,11 @@ namespace DesktopController
                     return result;
                 }
             }
+        }
+
+        private static string AdsPath(string endpoint, string market)
+        {
+            return "api/amazon-ads/" + endpoint + "?market=" + Uri.EscapeDataString(market ?? "US");
         }
 
         public void Dispose() => _http.Dispose();

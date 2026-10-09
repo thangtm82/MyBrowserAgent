@@ -24,11 +24,11 @@ namespace MyBrowserAgent.Controllers
         private readonly AmazonAdsKeywordRecommendationService _keywordRecommendations = new AmazonAdsKeywordRecommendationService();
 
         [HttpPost, Route("campaigns/filter")]
-        public IHttpActionResult FilterCampaigns(CampaignFilterRequest request)
+        public IHttpActionResult FilterCampaigns(CampaignFilterRequest request, [FromUri] string market = null)
         {
             try
             {
-                var rows = _campaigns.Filter(BrowserAgentRuntime.Browser, request);
+                var rows = _campaigns.Filter(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(rows));
             }
             catch (ArgumentException ex)
@@ -50,11 +50,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("targets/filter")]
-        public IHttpActionResult FilterTargets(TargetFilterRequest request)
+        public IHttpActionResult FilterTargets(TargetFilterRequest request, [FromUri] string market = null)
         {
             try
             {
-                var rows = _targets.Filter(BrowserAgentRuntime.Browser, request);
+                var rows = _targets.Filter(BrowserAgentRuntime.Browser, request, ResolveMarket(market, request?.Market));
                 return Ok(ApiResult.Ok(rows));
             }
             catch (ArgumentException ex)
@@ -76,11 +76,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPut, Route("targets/bid")]
-        public IHttpActionResult UpdateTargetBid(TargetBidUpdateRequest request)
+        public IHttpActionResult UpdateTargetBid(TargetBidUpdateRequest request, [FromUri] string market = null)
         {
             try
             {
-                var result = _targetBids.Update(BrowserAgentRuntime.Browser, request);
+                var result = _targetBids.Update(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)
@@ -106,12 +106,12 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPut, Route("targets/bids")]
-        public IHttpActionResult UpdateTargetBids(TargetBidBulkUpdateRequest request)
+        public IHttpActionResult UpdateTargetBids(TargetBidBulkUpdateRequest request, [FromUri] string market = null)
         {
             var traceId = Guid.NewGuid().ToString("N");
             try
             {
-                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request, traceId);
+                var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request, traceId, ResolveMarket(market));
                 return BulkBidResponse(HttpStatusCode.OK, ApiResult.Ok(result), traceId);
             }
             catch (ArgumentException ex)
@@ -156,11 +156,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("campaigns/auto")]
-        public IHttpActionResult CreateAutoCampaign(AutoCampaignCreateRequest request)
+        public IHttpActionResult CreateAutoCampaign(AutoCampaignCreateRequest request, [FromUri] string market = null)
         {
             try
             {
-                var result = _autoCampaigns.Create(BrowserAgentRuntime.Browser, request);
+                var result = _autoCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market, request?.Market));
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)
@@ -187,11 +187,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("campaigns/manual-product")]
-        public IHttpActionResult CreateManualProductCampaign(ManualProductCampaignCreateRequest request)
+        public IHttpActionResult CreateManualProductCampaign(ManualProductCampaignCreateRequest request, [FromUri] string market = null)
         {
             try
             {
-                var result = _manualProductCampaigns.Create(BrowserAgentRuntime.Browser, request);
+                var result = _manualProductCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)
@@ -218,11 +218,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("targets/keywords/recommendations")]
-        public IHttpActionResult GetKeywordRecommendations(KeywordRecommendationRequest request)
+        public IHttpActionResult GetKeywordRecommendations(KeywordRecommendationRequest request, [FromUri] string market = null)
         {
             try
             {
-                var results = _keywordRecommendations.GetRecommendations(BrowserAgentRuntime.Browser, request);
+                var results = _keywordRecommendations.GetRecommendations(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(results));
             }
             catch (ArgumentException ex)
@@ -249,11 +249,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("campaigns/manual-keyword")]
-        public IHttpActionResult CreateManualKeywordCampaign(ManualKeywordCampaignCreateRequest request)
+        public IHttpActionResult CreateManualKeywordCampaign(ManualKeywordCampaignCreateRequest request, [FromUri] string market = null)
         {
             try
             {
-                var result = _manualKeywordCampaigns.Create(BrowserAgentRuntime.Browser, request);
+                var result = _manualKeywordCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(result));
             }
             catch (ArgumentException ex)
@@ -280,11 +280,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("portfolios")]
-        public IHttpActionResult CreatePortfolio(PortfolioCreateRequest request)
+        public IHttpActionResult CreatePortfolio(PortfolioCreateRequest request, [FromUri] string market = null)
         {
             try
             {
-                var id = _portfolios.Create(BrowserAgentRuntime.Browser, request);
+                var id = _portfolios.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(id));
             }
             catch (ArgumentException ex)
@@ -311,11 +311,11 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPut, Route("portfolios/external-id")]
-        public IHttpActionResult UpdatePortfolioAndGetExternalId(PortfolioExternalIdRequest request)
+        public IHttpActionResult UpdatePortfolioAndGetExternalId(PortfolioExternalIdRequest request, [FromUri] string market = null)
         {
             try
             {
-                var externalId = _portfolios.UpdateAndGetExternalId(BrowserAgentRuntime.Browser, request);
+                var externalId = _portfolios.UpdateAndGetExternalId(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
                 return Ok(ApiResult.Ok(externalId));
             }
             catch (ArgumentException ex)
@@ -376,12 +376,16 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("account-info")]
-        public IHttpActionResult AccountInfo()
+        public IHttpActionResult AccountInfo([FromUri] string market = "US")
         {
             try
             {
-                var info = _service.GetAccountInfo(BrowserAgentRuntime.Browser);
+                var info = _service.GetAccountInfo(BrowserAgentRuntime.Browser, market);
                 return Ok(ApiResult.Ok(info));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -396,5 +400,10 @@ namespace MyBrowserAgent.Controllers
                 return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
             }
         }
+        private static string ResolveMarket(string queryMarket, string bodyMarket = null)
+        {
+            return queryMarket ?? bodyMarket ?? "US";
+        }
+
     }
 }

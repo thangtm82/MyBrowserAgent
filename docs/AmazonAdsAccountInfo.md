@@ -1,8 +1,8 @@
 # Amazon Ads account information
 
-`POST /api/amazon-ads/account-info` uses the Agent's Selenium Chrome profile to open `https://advertising.amazon.com/cb`, read its page source, and extract the account fields. The request has no body. It requires the usual `X-Api-Key` header and an Amazon Ads session already signed in within the Agent's Chrome profile.
+`POST /api/amazon-ads/account-info` uses the Agent's Selenium Chrome profile to open the `/cb` URL for `?market=US` (default) or `?market=CA`, read its page source, and extract the account fields. The request has no body. It requires the usual `X-Api-Key` header and an Amazon Ads session already signed in within the Agent's Chrome profile.
 
-The operation uses the current tab and navigates it to `https://advertising.amazon.com/cb` when needed. It waits up to 15 seconds for `EntityId` and leaves the tab open, including when the operation fails. It serializes access to Chrome with the existing browser commands. It does not need a Cookie header, campaign URL, or entity ID from Desktop.
+The operation uses the current tab and navigates it to the selected market's `/cb` URL when needed. It waits up to 15 seconds for `EntityId` and leaves the tab open, including when the operation fails. It serializes access to Chrome with the existing browser commands. It does not need a Cookie header, campaign URL, or entity ID from Desktop.
 
 Example (.NET Framework 4.7.2):
 
@@ -16,6 +16,8 @@ using (var agent = new BrowserAgentClient("VPS01", "http://10.0.0.11:5050/", "YO
     Console.WriteLine(info.MarketplaceId);
 }
 ```
+
+`account-info` also accepts `?market=CA`; the desktop client can call `GetAmazonAdsAccountInfoAsync("CA")`. The request has no body.
 
 `Data` contains `Token`, `TraceId`, `SegmentId`, `ClientId`, `CsrfToken`, `SessionId`, `PageHitRequestId`, `AdvertiserId`, `EntityId`, `GlobalAccountId`, and `MarketplaceId`. Any field absent from the HTML is omitted from the JSON (and `null` in the C# DTO). If `EntityId` is missing, the API returns an error indicating that the Chrome login or Amazon Ads page format should be checked.
 

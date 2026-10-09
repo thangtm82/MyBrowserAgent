@@ -1,5 +1,7 @@
 # Filter Amazon Ads campaigns
 
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+
 `POST /api/amazon-ads/campaigns/filter` uses the client-supplied `AccountInfo` for Amazon Ads headers and executes `fetch` in the signed-in Selenium Chrome session. Chrome supplies the logged-in cookies. When the current tab is not on the required `/cb` URL, the Agent navigates that tab there and leaves it open after the request.
 
 The API applies the conditions from `filterCamp.txt`: state `ENABLED` or `PAUSED`, the requested `campaignTargetingType`, an inclusive ACoS range, and program type `SP` or `SPONSORED_ADS_RETAILERS`. Dates are inclusive calendar dates in `yyyy-MM-dd` form. The campaign report retains the fields and sort order of the supplied request.

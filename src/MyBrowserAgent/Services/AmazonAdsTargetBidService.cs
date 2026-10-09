@@ -12,7 +12,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsTargetBidService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
 
         // Chrome sends the session cookies and browser-owned Origin/Fetch headers.
         private const string UpdateScript = @"
@@ -34,10 +33,11 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ ok: false, error: String(error) }));
             });";
 
-        public JObject Update(BrowserService browser, TargetBidUpdateRequest request)
+        public JObject Update(BrowserService browser, TargetBidUpdateRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             var targetId = request.TargetId.Trim();
             var body = new JArray(new JObject
             {
@@ -45,11 +45,11 @@ namespace MyBrowserAgent.Services
                 ["countryCodes"] = new JArray(request.CountryCode.Trim().ToUpperInvariant()),
                 ["bid"] = request.Bid.Value.ToString(CultureInfo.InvariantCulture)
             });
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => UpdateInBrowser(driver, body, targetId, request.AccountInfo));
         }
 
-        public JObject UpdateMany(BrowserService browser, TargetBidBulkUpdateRequest request, string traceId)
+        public JObject UpdateMany(BrowserService browser, TargetBidBulkUpdateRequest request, string traceId, string market = "US")
         {
             using (var trace = new BulkBidTrace(traceId, request?.AccountInfo))
             {
@@ -58,9 +58,10 @@ namespace MyBrowserAgent.Services
                     if (browser == null) throw new ArgumentNullException(nameof(browser));
                     if (request == null) throw new ArgumentException("Request body is required.");
                     AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+                    AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
                     var body = BuildManyPayload(request.Targets);
                     trace.Write("RequestBody", body.ToString(Formatting.None));
-                    return browser.RunInTemporaryTab(CampaignUrl,
+                    return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                         driver => UpdateInBrowser(driver, body, null, request.AccountInfo, trace));
                 }
                 catch (Exception ex)

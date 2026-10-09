@@ -1,5 +1,7 @@
 # Create a Sponsored Products manual keyword campaign
 
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+
 `POST /api/amazon-ads/campaigns/manual-keyword` submits the manual keyword form to `/a9g-api-gateway/atlas/submit` using the signed-in Selenium Chrome session. Send `X-Api-Key` and `AccountInfo` returned by `POST /api/amazon-ads/start-session`.
 
 ```json
@@ -30,7 +32,7 @@
 
 `FormData.KeywordTargets` is a list of `KeywordTarget` objects with `Keyword`, `MatchType`, and numeric `Bid`, as specified in the supplied class. The rest of the payload is modeled by `AdsManualFormData`, `ShopperCohortBidding`, and `FeatureFlag`. `FeatureFlags` defaults to all 35 flags and values from your supplied class, and you can override them. The upstream request has `formId: "sp"`, `experience: "campaign"`, `targetingType: "MANUAL"`, `manualTargetingType: "KEYWORD"`, and `formVersion: 185` by default.
 
-The Agent fills `Portfolio.Budget.CurrencyCode` from the selected marketplace (USD for US, CAD for CA), confirms that the Chrome account matches `AccountInfo`, and uses Chrome's cookies. It uses the current tab, navigating it to `https://advertising.amazon.com/cb` if needed, and leaves it open. `ApiResult.Data` contains `StatusCode`, `Succeeded`, and Amazon's raw `Content`; check `Succeeded` and the response content. The Agent does not retry submissions automatically, so check Amazon Ads before retrying after a timeout.
+The Agent fills `Portfolio.Budget.CurrencyCode` from the selected marketplace (USD for US, CAD for CA), confirms that the Chrome account matches `AccountInfo`, and uses Chrome's cookies. It uses the current tab, navigating it to the selected market's `/cb` URL if needed, and leaves it open. `ApiResult.Data` contains `StatusCode`, `Succeeded`, and Amazon's raw `Content`; check `Succeeded` and the response content. The Agent does not retry submissions automatically, so check Amazon Ads before retrying after a timeout.
 
 Desktop example (.NET Framework 4.7.2):
 

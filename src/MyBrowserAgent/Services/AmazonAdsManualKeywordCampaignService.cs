@@ -11,7 +11,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsManualKeywordCampaignService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
         private const string UsMarketplaceId = "ATVPDKIKX0DER";
         private const string CaMarketplaceId = "A2EUQ1WTGCTBG2";
         private static readonly JsonSerializerSettings BodySettings = new JsonSerializerSettings
@@ -44,10 +43,11 @@ namespace MyBrowserAgent.Services
             });";
 
         public ManualKeywordCampaignCreateResult Create(
-            BrowserService browser, ManualKeywordCampaignCreateRequest request)
+            BrowserService browser, ManualKeywordCampaignCreateRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
 
             var payload = new AdsManualFormRequest
             {
@@ -56,7 +56,7 @@ namespace MyBrowserAgent.Services
                 FeatureFlags = request.FeatureFlags ?? new FeatureFlag()
             };
             var body = JsonConvert.SerializeObject(payload, Formatting.None, BodySettings);
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => SubmitInBrowser(driver, request.AccountInfo, body));
         }
 

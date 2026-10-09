@@ -1,5 +1,7 @@
 # MyBrowserAgent
 
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+
 Control a Chrome browser running on Windows through a small HTTP API, either locally or from another machine.
 
 This project is designed specifically for environments that must remain on **Windows Server 2012 R2** and **.NET Framework 4.7.2**.
