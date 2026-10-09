@@ -27,11 +27,13 @@ namespace MyBrowserAgent.Services
             return info;
         }
 
-        public AmazonAdsAccountInfo StartSession(BrowserService browser)
+        public AmazonAdsAccountInfo StartSession(BrowserService browser, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
 
-            return browser.RunInNewSession(CampaignUrl, driver =>
+            var url = AmazonAdsMarket.GetCampaignUrl(market);
+
+            return browser.RunInNewSession(url, driver =>
             {
                 var deadline = DateTime.UtcNow.AddSeconds(15);
                 do

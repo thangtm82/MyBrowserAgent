@@ -30,7 +30,7 @@
 
 `FormData.KeywordTargets` is a list of `KeywordTarget` objects with `Keyword`, `MatchType`, and numeric `Bid`, as specified in the supplied class. The rest of the payload is modeled by `AdsManualFormData`, `ShopperCohortBidding`, and `FeatureFlag`. `FeatureFlags` defaults to all 35 flags and values from your supplied class, and you can override them. The upstream request has `formId: "sp"`, `experience: "campaign"`, `targetingType: "MANUAL"`, `manualTargetingType: "KEYWORD"`, and `formVersion: 185` by default.
 
-The Agent fills `Portfolio.Budget.CurrencyCode` from the selected marketplace (USD for US, CAD for CA), confirms that the Chrome account matches `AccountInfo`, and uses Chrome's cookies. It reuses the active `https://advertising.amazon.com/cb` tab or opens a temporary tab. `ApiResult.Data` contains `StatusCode`, `Succeeded`, and Amazon's raw `Content`; check `Succeeded` and the response content. The Agent does not retry submissions automatically, so check Amazon Ads before retrying after a timeout.
+The Agent fills `Portfolio.Budget.CurrencyCode` from the selected marketplace (USD for US, CAD for CA), confirms that the Chrome account matches `AccountInfo`, and uses Chrome's cookies. It uses the current tab, navigating it to `https://advertising.amazon.com/cb` if needed, and leaves it open. `ApiResult.Data` contains `StatusCode`, `Succeeded`, and Amazon's raw `Content`; check `Succeeded` and the response content. The Agent does not retry submissions automatically, so check Amazon Ads before retrying after a timeout.
 
 Desktop example (.NET Framework 4.7.2):
 

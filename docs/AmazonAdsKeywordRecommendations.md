@@ -34,7 +34,7 @@ The Agent creates one target for each keyword and match type pair. For this exam
 }
 ```
 
-The attachment still omits the `Target` class; the Agent models the two members used by the original method, `Keyword` and `MatchType`. It sends `application/vnd.spkeywordsrecommendation.v5+json`. Chrome supplies its signed-in cookies. The Agent checks the active account against `AccountInfo` and reuses a `/cb` tab when available.
+The attachment still omits the `Target` class; the Agent models the two members used by the original method, `Keyword` and `MatchType`. It sends `application/vnd.spkeywordsrecommendation.v5+json`. Chrome supplies its signed-in cookies. The Agent checks the active account against `AccountInfo`, navigates the current tab to `/cb` if needed, and leaves that tab open.
 
 On HTTP 200, the Agent flattens `keywordTargetList[*].bidInfo[*]` into `ApiResult.Data`, a list of `KeywordTarget` objects with `Keyword`, `MatchType`, and `Bid`. The bid is divided by 100 and rounded to two decimal places, matching the supplied function. If Amazon returns invalid JSON or an unsuccessful status, the Agent returns an error rather than a null list. An empty recommendation list returns `[]`.
 

@@ -342,12 +342,16 @@ namespace MyBrowserAgent.Controllers
         }
 
         [HttpPost, Route("start-session")]
-        public IHttpActionResult StartSession()
+        public IHttpActionResult StartSession([FromUri] string market = "US")
         {
             try
             {
-                var info = _service.StartSession(BrowserAgentRuntime.Browser);
+                var info = _service.StartSession(BrowserAgentRuntime.Browser, market);
                 return Ok(ApiResult.Ok(info));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {

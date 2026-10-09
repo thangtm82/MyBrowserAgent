@@ -230,7 +230,7 @@ Call `POST /api/amazon-ads/start-session` (or `account-info`) to obtain `AmazonA
 
 See [Amazon Ads account information](docs/AmazonAdsAccountInfo.md), [campaign filtering](docs/AmazonAdsCampaignFilter.md), [target filtering](docs/AmazonAdsTargetFilter.md), [target bid updates](docs/AmazonAdsTargetBidUpdate.md), [portfolio creation](docs/AmazonAdsPortfolioCreate.md), [portfolio external ID](docs/AmazonAdsPortfolioExternalId.md), [automatic campaign creation](docs/AmazonAdsAutoCampaignCreate.md), [manual product campaign creation](docs/AmazonAdsManualProductCampaignCreate.md), [manual keyword campaign creation](docs/AmazonAdsManualKeywordCampaignCreate.md), and [keyword recommendations](docs/AmazonAdsKeywordRecommendations.md) for .NET Framework desktop examples.
 
-When the selected Selenium tab's URL starts with `https://advertising.amazon.com/cb`, Amazon Ads operations run on that tab and leave it open. From other pages, the Agent opens `/cb` in a temporary tab and restores the original tab afterward.
+Amazon Ads operations run in the selected Selenium tab. If it is not already on the URL required by the service, the Agent navigates that same tab to `/cb` on the selected domain and leaves it open after the operation, including when the operation fails.
 
 ### Selector types
 

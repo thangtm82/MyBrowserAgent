@@ -8,6 +8,7 @@ namespace MyBrowserAgent.Models
     public sealed class AutoCampaignCreateRequest
     {
         public AmazonAdsAccountInfo AccountInfo { get; set; }
+        public string Market { get; set; } = "US";
         public int FormVersion { get; set; } = 186;
         public AdsAutoFormData FormData { get; set; }
         public JObject FeatureFlags { get; set; } = new JObject();
