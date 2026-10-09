@@ -1,6 +1,8 @@
 # Create an Amazon Ads portfolio
 
-`POST /api/amazon-ads/portfolios` creates one portfolio in the signed-in Selenium Chrome session. It uses the client-supplied account information and sends a same-origin request to `/a9g-api-gateway/cm/api/portfolios`. Chrome supplies its own cookies. The Agent navigates the current tab to `https://advertising.amazon.com/cb` if needed and leaves it open afterward.
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+
+`POST /api/amazon-ads/portfolios` creates one portfolio in the signed-in Selenium Chrome session. It uses the client-supplied account information and sends a same-origin request to `/a9g-api-gateway/cm/api/portfolios`. Chrome supplies its own cookies. The Agent navigates the current tab to the selected market's `/cb` URL if needed and leaves it open afterward.
 
 Use `POST /api/amazon-ads/start-session` to get `AccountInfo`, then send:
 

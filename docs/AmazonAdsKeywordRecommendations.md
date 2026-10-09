@@ -1,5 +1,7 @@
 # Get Amazon Ads keyword recommendations
 
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+
 `POST /api/amazon-ads/targets/keywords/recommendations` calls the signed-in Chrome session's `/a9g-api-gateway/sp/targets/keywords/recommendations` endpoint. Send `X-Api-Key` and `AccountInfo` returned by `POST /api/amazon-ads/start-session`.
 
 ```json

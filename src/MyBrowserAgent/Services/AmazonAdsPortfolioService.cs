@@ -10,7 +10,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsPortfolioService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
         private const string UsMarketplaceId = "ATVPDKIKX0DER";
         private const string CaMarketplaceId = "A2EUQ1WTGCTBG2";
 
@@ -39,11 +38,12 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ ok: false, error: String(error) }));
             });";
 
-        public string Create(BrowserService browser, PortfolioCreateRequest request)
+        public string Create(BrowserService browser, PortfolioCreateRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ArgumentException("Name is required.");
 
@@ -62,7 +62,7 @@ namespace MyBrowserAgent.Services
                 })
             };
 
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => CreateInBrowser(driver, request.AccountInfo, body));
         }
 
@@ -93,11 +93,12 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ ok: false, error: String(error) }));
             });";
 
-        public string UpdateAndGetExternalId(BrowserService browser, PortfolioExternalIdRequest request)
+        public string UpdateAndGetExternalId(BrowserService browser, PortfolioExternalIdRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             if (request == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             if (string.IsNullOrWhiteSpace(request.PortfolioId))
                 throw new ArgumentException("PortfolioId is required.");
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -118,7 +119,7 @@ namespace MyBrowserAgent.Services
                 })
             };
 
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => UpdateInBrowser(driver, request.AccountInfo, portfolioId, body));
         }
 

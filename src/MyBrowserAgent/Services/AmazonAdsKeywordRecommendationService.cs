@@ -10,7 +10,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsKeywordRecommendationService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
 
         private const string FetchScript = @"
             var done = arguments[arguments.length - 1];
@@ -37,10 +36,11 @@ namespace MyBrowserAgent.Services
             });";
 
         public IList<KeywordTarget> GetRecommendations(
-            BrowserService browser, KeywordRecommendationRequest request)
+            BrowserService browser, KeywordRecommendationRequest request, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
+            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             var targets = new List<Target>();
             foreach (var keyword in request.Keywords)
                 foreach (var matchType in request.MatchTypes)
@@ -53,7 +53,7 @@ namespace MyBrowserAgent.Services
             };
             // Preserve the property casing used by the supplied model.
             var body = JsonConvert.SerializeObject(payload, Formatting.None);
-            return browser.RunInTemporaryTab(CampaignUrl,
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => FetchInBrowser(driver, request.AccountInfo, body));
         }
 

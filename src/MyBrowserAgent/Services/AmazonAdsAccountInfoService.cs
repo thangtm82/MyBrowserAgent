@@ -7,17 +7,16 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsAccountInfoService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
-        public AmazonAdsAccountInfo GetAccountInfo(BrowserService browser)
+        public AmazonAdsAccountInfo GetAccountInfo(BrowserService browser, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
 
             // PageSource includes the page's inline configuration scripts. The Chrome profile
             // provides the logged-in session; no Cookie header or separate HTTP request is used.
             var html = browser.ReadPageSourceInTemporaryTab(
-                CampaignUrl,
+                AmazonAdsMarket.GetCampaignUrl(market),
                 source => !string.IsNullOrEmpty(Read(source, "entityId")),
                 15);
             var info = Parse(html);

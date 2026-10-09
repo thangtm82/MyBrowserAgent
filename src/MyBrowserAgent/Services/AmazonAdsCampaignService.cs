@@ -12,7 +12,6 @@ namespace MyBrowserAgent.Services
 {
     public sealed class AmazonAdsCampaignService
     {
-        private const string CampaignUrl = "https://advertising.amazon.com/cb";
         private const int PageSize = 50;
         private static readonly string[] Fields = {
             "campaignExternalId", "campaignName", "state", "statusName", "marketplaceId",
@@ -54,11 +53,12 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ ok: false, error: String(error) }));
             });";
 
-        public IList<JObject> Filter(BrowserService browser, CampaignFilterRequest filter)
+        public IList<JObject> Filter(BrowserService browser, CampaignFilterRequest filter, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            return browser.RunInTemporaryTab(CampaignUrl, driver => FetchAll(driver, filter));
+            AmazonAdsMarket.ValidateMarketplace(market, filter.AccountInfo.MarketplaceId);
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market), driver => FetchAll(driver, filter));
         }
 
         private static IList<JObject> FetchAll(IWebDriver driver, CampaignFilterRequest filter)

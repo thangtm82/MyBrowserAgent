@@ -45,11 +45,12 @@ namespace MyBrowserAgent.Services
                 done(JSON.stringify({ ok: false, error: String(error) }));
             });";
 
-        public IList<JObject> Filter(BrowserService browser, TargetFilterRequest filter)
+        public IList<JObject> Filter(BrowserService browser, TargetFilterRequest filter, string market = "US")
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(filter.Market),
+            AmazonAdsMarket.ValidateMarketplace(market, filter.AccountInfo.MarketplaceId);
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
                 driver => FetchOnePage(driver, filter));
         }
 
@@ -197,7 +198,6 @@ namespace MyBrowserAgent.Services
         {
             if (filter == null) throw new ArgumentException("Request body is required.");
             AmazonAdsAccountInfoValidator.Validate(filter.AccountInfo);
-            AmazonAdsMarket.ValidateMarketplace(filter.Market, filter.AccountInfo.MarketplaceId);
             if (!filter.MinAcos.HasValue || !filter.MaxAcos.HasValue ||
                 filter.MinAcos < 0 || filter.MinAcos > filter.MaxAcos)
                 throw new ArgumentException("MinAcos and MaxAcos must be nonnegative and MinAcos <= MaxAcos.");
