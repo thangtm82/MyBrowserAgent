@@ -32,12 +32,6 @@ namespace MyBrowserAgent.Services
                 throw new ArgumentException("AccountInfo.MarketplaceId does not match Market (" + normalized + ").");
         }
 
-        public static bool IsCampaignUrl(string url)
-        {
-            return string.Equals(url, UsCampaignUrl, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(url, CaCampaignUrl, StringComparison.OrdinalIgnoreCase);
-        }
-
         private static string Normalize(string market)
         {
             var value = market?.Trim().ToUpperInvariant();

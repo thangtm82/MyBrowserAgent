@@ -296,33 +296,11 @@ namespace MyBrowserAgent.Services
             lock (_sync)
             {
                 var driver = Driver;
-                // Reuse the active Amazon Ads /cb tab, including on failures.
-                // The action is responsible for its own navigation, if any.
-                if (AmazonAdsMarket.IsCampaignUrl(url) &&
-                    driver.Url.StartsWith(url, StringComparison.OrdinalIgnoreCase))
-                    return action(driver);
-
-                var original = driver.CurrentWindowHandle;
-                string temporary = null;
-                try
-                {
-                    var before = driver.WindowHandles.ToList();
-                    ((IJavaScriptExecutor)driver).ExecuteScript("window.open('about:blank','_blank');");
-                    temporary = driver.WindowHandles.Except(before).Single();
-                    driver.SwitchTo().Window(temporary);
+                // Use the selected tab for all operations. Leave it on the requested URL
+                // after the action, even if the action throws.
+                if (!driver.Url.StartsWith(url, StringComparison.OrdinalIgnoreCase))
                     driver.Navigate().GoToUrl(url);
-                    return action(driver);
-                }
-                finally
-                {
-                    if (temporary != null && driver.WindowHandles.Contains(temporary))
-                    {
-                        driver.SwitchTo().Window(temporary);
-                        driver.Close();
-                    }
-                    if (driver.WindowHandles.Contains(original))
-                        driver.SwitchTo().Window(original);
-                }
+                return action(driver);
             }
         }
 

@@ -2,7 +2,7 @@
 
 `POST /api/amazon-ads/account-info` uses the Agent's Selenium Chrome profile to open `https://advertising.amazon.com/cb`, read its page source, and extract the account fields. The request has no body. It requires the usual `X-Api-Key` header and an Amazon Ads session already signed in within the Agent's Chrome profile.
 
-The operation uses the current tab when its URL starts with `https://advertising.amazon.com/cb`. Otherwise it opens a temporary `/cb` tab, waits up to 15 seconds for `EntityId`, then closes the tab and restores the original one. It serializes access to Chrome with the existing browser commands. It does not need a Cookie header, campaign URL, or entity ID from Desktop.
+The operation uses the current tab and navigates it to `https://advertising.amazon.com/cb` when needed. It waits up to 15 seconds for `EntityId` and leaves the tab open, including when the operation fails. It serializes access to Chrome with the existing browser commands. It does not need a Cookie header, campaign URL, or entity ID from Desktop.
 
 Example (.NET Framework 4.7.2):
 

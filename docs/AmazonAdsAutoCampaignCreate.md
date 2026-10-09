@@ -1,6 +1,6 @@
 # Create an Amazon Ads automatic campaign
 
-`POST /api/amazon-ads/campaigns/auto` submits the Sponsored Products form to `/a9g-api-gateway/atlas/submit` from the signed-in Selenium Chrome session. The browser supplies session cookies and Origin; the Agent sends the Amazon Ads headers from `AccountInfo`. The active `/cb` tab for the selected market is reused, or the Agent opens a temporary tab on `advertising.amazon.com` (US) or `advertising.amazon.ca` (CA).
+`POST /api/amazon-ads/campaigns/auto` submits the Sponsored Products form to `/a9g-api-gateway/atlas/submit` from the signed-in Selenium Chrome session. The browser supplies session cookies and Origin; the Agent sends the Amazon Ads headers from `AccountInfo`. The Agent uses the current tab, navigating it to `/cb` on `advertising.amazon.com` (US) or `advertising.amazon.ca` (CA) if needed, and leaves it open.
 
 Request `AmazonAdsAccountInfo` with `POST /api/amazon-ads/start-session` first. Send the Agent's `X-Api-Key` header and this JSON body:
 
