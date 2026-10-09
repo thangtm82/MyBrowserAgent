@@ -57,11 +57,10 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            AmazonAdsMarket.ValidateMarketplace(market, filter.AccountInfo.MarketplaceId);
-            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market), driver => FetchAll(driver, filter));
+            return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market), driver => FetchAll(driver, filter, market));
         }
 
-        private static IList<JObject> FetchAll(IWebDriver driver, CampaignFilterRequest filter)
+        private static IList<JObject> FetchAll(IWebDriver driver, CampaignFilterRequest filter, string market)
         {
             var info = filter.AccountInfo;
             var headers = new Dictionary<string, string>
@@ -83,7 +82,7 @@ namespace MyBrowserAgent.Services
                 ["x-amz-isglobalcampaignenabled"] = "true"
             };
 
-            var payload = BuildPayload(filter, info.GlobalAccountId);
+            var payload = BuildPayload(filter, info.GlobalAccountId, market);
             var campaigns = new List<JObject>();
             var seenTokens = new HashSet<string>(StringComparer.Ordinal);
             var logRunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture) +
@@ -166,7 +165,7 @@ namespace MyBrowserAgent.Services
             File.WriteAllText(Path.Combine(directory, filename), content, new UTF8Encoding(false));
         }
 
-        private static JObject BuildPayload(CampaignFilterRequest filter, string accountId)
+        private static JObject BuildPayload(CampaignFilterRequest filter, string accountId, string market)
         {
             var conditions = new JArray(
                 new JObject { ["field"] = "state", ["values"] = new JArray("ENABLED", "PAUSED"),
@@ -191,7 +190,7 @@ namespace MyBrowserAgent.Services
                     ["endDate"] = filter.EndDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["timeUnits"] = new JArray("SUMMARY", "DAILY"),
                     ["tokenPagination"] = new JObject { ["size"] = PageSize },
-                    ["currencyOfView"] = "USD",
+                    ["currencyOfView"] = AmazonAdsMarket.GetCurrencyCode(market),
                     ["sort"] = new JObject { ["sortField"] = "startDate", ["sortOrder"] = "DESC" },
                     ["columnsByTimeUnit"] = new JObject
                     {

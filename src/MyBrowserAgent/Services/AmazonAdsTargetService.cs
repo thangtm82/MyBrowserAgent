@@ -49,12 +49,11 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(filter);
-            AmazonAdsMarket.ValidateMarketplace(market, filter.AccountInfo.MarketplaceId);
             return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),
-                driver => FetchOnePage(driver, filter));
+                driver => FetchOnePage(driver, filter, market));
         }
 
-        private static IList<JObject> FetchOnePage(IWebDriver driver, TargetFilterRequest filter)
+        private static IList<JObject> FetchOnePage(IWebDriver driver, TargetFilterRequest filter, string market)
         {
             var info = filter.AccountInfo;
             var headers = new Dictionary<string, string>
@@ -77,7 +76,7 @@ namespace MyBrowserAgent.Services
                 headers["x-amzn-trace-id"] = "Root=" + info.TraceId +
                     ";Parent=" + info.SegmentId + ";Sampled=1";
 
-            var payload = BuildPayload(filter);
+            var payload = BuildPayload(filter, market);
             var logRunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture) +
                 "-" + Guid.NewGuid().ToString("N");
             var timeouts = driver.Manage().Timeouts();
@@ -146,7 +145,7 @@ namespace MyBrowserAgent.Services
             File.WriteAllText(Path.Combine(directory, filename), content, new UTF8Encoding(false));
         }
 
-        private static JObject BuildPayload(TargetFilterRequest filter)
+        private static JObject BuildPayload(TargetFilterRequest filter, string market)
         {
             var conditions = new JArray(
                 new JObject { ["field"] = "acos", ["comparisonOperator"] = "LESS_THAN_OR_EQUALS",
@@ -188,7 +187,7 @@ namespace MyBrowserAgent.Services
                     ["endDate"] = filter.EndDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["timeUnits"] = new JArray("SUMMARY", "DAILY"),
                     ["offsetPagination"] = new JObject { ["size"] = PageSize, ["offset"] = filter.Offset.Value },
-                    ["currencyOfView"] = "USD",
+                    ["currencyOfView"] = AmazonAdsMarket.GetCurrencyCode(market),
                     ["sort"] = new JObject { ["sortField"] = "spendCoV", ["sortOrder"] = "DESC" }
                 }
             };

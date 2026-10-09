@@ -37,7 +37,6 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             var targetId = request.TargetId.Trim();
             var body = new JArray(new JObject
             {
@@ -58,7 +57,6 @@ namespace MyBrowserAgent.Services
                     if (browser == null) throw new ArgumentNullException(nameof(browser));
                     if (request == null) throw new ArgumentException("Request body is required.");
                     AmazonAdsAccountInfoValidator.Validate(request.AccountInfo);
-                    AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
                     var body = BuildManyPayload(request.Targets);
                     trace.Write("RequestBody", body.ToString(Formatting.None));
                     return browser.RunInTemporaryTab(AmazonAdsMarket.GetCampaignUrl(market),

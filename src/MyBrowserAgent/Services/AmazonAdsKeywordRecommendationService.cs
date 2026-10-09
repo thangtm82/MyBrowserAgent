@@ -40,7 +40,6 @@ namespace MyBrowserAgent.Services
         {
             if (browser == null) throw new ArgumentNullException(nameof(browser));
             Validate(request);
-            AmazonAdsMarket.ValidateMarketplace(market, request.AccountInfo.MarketplaceId);
             var targets = new List<Target>();
             foreach (var keyword in request.Keywords)
                 foreach (var matchType in request.MatchTypes)

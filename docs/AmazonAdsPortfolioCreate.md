@@ -1,6 +1,6 @@
 # Create an Amazon Ads portfolio
 
-Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the active Chrome session. Unsupported `market` values return HTTP 400; the market-to-`MarketplaceId` check is temporarily disabled.
 
 `POST /api/amazon-ads/portfolios` creates one portfolio in the signed-in Selenium Chrome session. It uses the client-supplied account information and sends a same-origin request to `/a9g-api-gateway/cm/api/portfolios`. Chrome supplies its own cookies. The Agent navigates the current tab to the selected market's `/cb` URL if needed and leaves it open afterward.
 
@@ -19,7 +19,7 @@ Use `POST /api/amazon-ads/start-session` to get `AccountInfo`, then send:
 }
 ```
 
-Set the usual `X-Api-Key` header. The Agent verifies that the account and marketplace in `AccountInfo` match the Chrome page before creating the portfolio. US (`ATVPDKIKX0DER`) uses USD; CA (`A2EUQ1WTGCTBG2`) uses CAD. Other marketplaces are rejected. The body uses a `NO_CAP` budget and an empty campaign association list, matching the original script. `ApiResult.Data` is the new portfolio ID as a string.
+Set the usual `X-Api-Key` header. The Agent verifies that the account and marketplace in `AccountInfo` match the Chrome page before creating the portfolio. Currency comes from the selected market: US uses USD and CA uses CAD. The Agent still compares `AccountInfo` with the active Chrome account. The body uses a `NO_CAP` budget and an empty campaign association list, matching the original script. `ApiResult.Data` is the new portfolio ID as a string.
 
 Desktop client example (.NET Framework 4.7.2):
 

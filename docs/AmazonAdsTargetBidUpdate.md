@@ -1,6 +1,6 @@
 # Update an Amazon Ads target bid
 
-Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the matching market session. Invalid markets or a mismatched `MarketplaceId` return HTTP 400.
+Pass `?market=CA` to use `https://advertising.amazon.ca/cb`; omit it for US (`https://advertising.amazon.com/cb`). Use `AccountInfo` from the active Chrome session. Unsupported `market` values return HTTP 400; the market-to-`MarketplaceId` check is temporarily disabled.
 
 `PUT /api/amazon-ads/targets/bid` changes one target's bid using the Agent's signed-in Selenium Chrome session. The Agent uses client-supplied `AccountInfo` for Amazon Ads headers and runs a same-origin `PUT /a9g-api-gateway/cm/adsApi/targets/update`. Chrome sends session cookies. The Agent uses the current tab and navigates it to the required `/cb` URL if needed; it leaves that tab open afterward.
 

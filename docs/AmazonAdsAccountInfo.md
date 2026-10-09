@@ -14,12 +14,13 @@ using (var agent = new BrowserAgentClient("VPS01", "http://10.0.0.11:5050/", "YO
     Console.WriteLine(info.EntityId);
     Console.WriteLine(info.GlobalAccountId);
     Console.WriteLine(info.MarketplaceId);
+    Console.WriteLine(info.Currency); // USD or CAD
 }
 ```
 
 `account-info` also accepts `?market=CA`; the desktop client can call `GetAmazonAdsAccountInfoAsync("CA")`. The request has no body.
 
-`Data` contains `Token`, `TraceId`, `SegmentId`, `ClientId`, `CsrfToken`, `SessionId`, `PageHitRequestId`, `AdvertiserId`, `EntityId`, `GlobalAccountId`, and `MarketplaceId`. Any field absent from the HTML is omitted from the JSON (and `null` in the C# DTO). If `EntityId` is missing, the API returns an error indicating that the Chrome login or Amazon Ads page format should be checked.
+`Data` contains `Token`, `TraceId`, `SegmentId`, `ClientId`, `CsrfToken`, `SessionId`, `PageHitRequestId`, `AdvertiserId`, `EntityId`, `GlobalAccountId`, `MarketplaceId`, and `Currency`. `Currency` is derived from the `market` parameter (US → USD, CA → CAD), not from page HTML. Any other field absent from the HTML is omitted from the JSON (and `null` in the C# DTO). If `EntityId` is missing, the API returns an error indicating that the Chrome login or Amazon Ads page format should be checked.
 
 These fields include session credentials. Keep the API on a private network and avoid logging the response.
 
@@ -36,6 +37,7 @@ AmazonAdsAccountInfo info = await agent.StartAmazonAdsSessionAsync(); // US
 AmazonAdsAccountInfo canadaInfo = await agent.StartAmazonAdsSessionAsync("CA");
 Console.WriteLine(canadaInfo.EntityId);
 Console.WriteLine(canadaInfo.GlobalAccountId);
+Console.WriteLine(canadaInfo.Currency); // CAD
 ```
 
 This creates a fresh Selenium browser session, while using the stored Amazon Ads login from the same Chrome profile. It does not create a new Amazon user account.
