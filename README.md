@@ -64,6 +64,15 @@ Copy that output folder to the VPS, for example:
 C:\BrowserAgent\
 ```
 
+### Trace campaign submission errors
+
+The three campaign submission routes return an `X-Agent-Trace-Id` header. Find that ID in
+`%LOCALAPPDATA%\MyBrowserAgent\logs\campaign-errors-YYYYMMDD.log` under the Windows user
+running the Agent. Each error entry records the endpoint, market, and either the Amazon HTTP
+status with a response excerpt or the exception with its stack trace. The sample desktop
+client exposes the ID as `TraceId` on campaign results and includes it in HTTP error messages.
+For an Amazon HTTP 422, check the response excerpt and the campaign state before retrying.
+
 ## VPS preparation
 
 ### 1. Install .NET Framework 4.7.2

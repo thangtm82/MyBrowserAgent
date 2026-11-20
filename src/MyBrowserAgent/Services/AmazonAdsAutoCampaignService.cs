@@ -99,7 +99,8 @@ namespace MyBrowserAgent.Services
                 var status = response.Value<int?>("status");
                 if (!status.HasValue)
                     throw new InvalidOperationException(
-                        "The browser could not complete the Amazon Ads campaign request. Check for a created campaign before retrying.");
+                        "The browser could not complete the Amazon Ads campaign request. Check for a created campaign before retrying.",
+                        new InvalidOperationException(response.Value<string>("error") ?? "Browser result did not contain a status."));
 
                 return new AutoCampaignCreateResult
                 {

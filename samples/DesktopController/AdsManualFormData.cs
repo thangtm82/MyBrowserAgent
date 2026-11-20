@@ -88,6 +88,7 @@ namespace DesktopController
 
     public sealed class ManualKeywordCampaignCreateResult
     {
+        public string TraceId { get; set; }
         public int StatusCode { get; set; }
         public bool Succeeded { get; set; }
         public string Content { get; set; }

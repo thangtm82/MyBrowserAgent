@@ -112,43 +112,43 @@ namespace MyBrowserAgent.Controllers
             try
             {
                 var result = _targetBids.UpdateMany(BrowserAgentRuntime.Browser, request, traceId, ResolveMarket(market));
-                return BulkBidResponse(HttpStatusCode.OK, ApiResult.Ok(result), traceId);
+                return TraceResponse(HttpStatusCode.OK, ApiResult.Ok(result), traceId);
             }
             catch (ArgumentException ex)
             {
-                return BulkBidResponse(HttpStatusCode.BadRequest, ApiResult.Fail(ex.Message), traceId);
+                return TraceResponse(HttpStatusCode.BadRequest, ApiResult.Fail(ex.Message), traceId);
             }
             catch (Newtonsoft.Json.JsonException)
             {
-                return BulkBidResponse(HttpStatusCode.BadGateway,
+                return TraceResponse(HttpStatusCode.BadGateway,
                     ApiResult.Fail("Amazon Ads returned invalid target bid update JSON."), traceId);
             }
             catch (InvalidOperationException ex)
             {
-                return BulkBidResponse(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message), traceId);
+                return TraceResponse(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message), traceId);
             }
             catch (RegexMatchTimeoutException)
             {
-                return BulkBidResponse(HttpStatusCode.BadGateway,
+                return TraceResponse(HttpStatusCode.BadGateway,
                     ApiResult.Fail("Could not parse the Amazon Ads page."), traceId);
             }
             catch (WebDriverException ex)
             {
-                return BulkBidResponse(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message), traceId);
+                return TraceResponse(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message), traceId);
             }
             catch (System.IO.IOException ex)
             {
-                return BulkBidResponse(HttpStatusCode.InternalServerError,
+                return TraceResponse(HttpStatusCode.InternalServerError,
                     ApiResult.Fail("Could not write the bulk bid trace log: " + ex.Message), traceId);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return BulkBidResponse(HttpStatusCode.InternalServerError,
+                return TraceResponse(HttpStatusCode.InternalServerError,
                     ApiResult.Fail("Could not write the bulk bid trace log: " + ex.Message), traceId);
             }
         }
 
-        private IHttpActionResult BulkBidResponse(HttpStatusCode status, ApiResult body, string traceId)
+        private IHttpActionResult TraceResponse<T>(HttpStatusCode status, T body, string traceId)
         {
             var response = Request.CreateResponse(status, body);
             response.Headers.Add("X-Agent-Trace-Id", traceId);
@@ -158,63 +158,21 @@ namespace MyBrowserAgent.Controllers
         [HttpPost, Route("campaigns/auto")]
         public IHttpActionResult CreateAutoCampaign(AutoCampaignCreateRequest request, [FromUri] string market = null)
         {
-            try
+            return SubmitCampaign("campaigns/auto", ResolveMarket(market, request?.Market), request?.AccountInfo, selectedMarket =>
             {
-                var result = _autoCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market, request?.Market));
-                return Ok(ApiResult.Ok(result));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Newtonsoft.Json.JsonException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
-                    "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
-            }
-            catch (WebDriverException ex)
-            {
-                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
-            }
+                var result = _autoCampaigns.Create(BrowserAgentRuntime.Browser, request, selectedMarket);
+                return (result, result.Succeeded, result.StatusCode, result.Content);
+            });
         }
 
         [HttpPost, Route("campaigns/manual-product")]
         public IHttpActionResult CreateManualProductCampaign(ManualProductCampaignCreateRequest request, [FromUri] string market = null)
         {
-            try
+            return SubmitCampaign("campaigns/manual-product", ResolveMarket(market), request?.AccountInfo, selectedMarket =>
             {
-                var result = _manualProductCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
-                return Ok(ApiResult.Ok(result));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Newtonsoft.Json.JsonException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
-                    "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
-            }
-            catch (WebDriverException ex)
-            {
-                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
-            }
+                var result = _manualProductCampaigns.Create(BrowserAgentRuntime.Browser, request, selectedMarket);
+                return (result, result.Succeeded, result.StatusCode, result.Content);
+            });
         }
 
         [HttpPost, Route("targets/keywords/recommendations")]
@@ -251,32 +209,11 @@ namespace MyBrowserAgent.Controllers
         [HttpPost, Route("campaigns/manual-keyword")]
         public IHttpActionResult CreateManualKeywordCampaign(ManualKeywordCampaignCreateRequest request, [FromUri] string market = null)
         {
-            try
+            return SubmitCampaign("campaigns/manual-keyword", ResolveMarket(market), request?.AccountInfo, selectedMarket =>
             {
-                var result = _manualKeywordCampaigns.Create(BrowserAgentRuntime.Browser, request, ResolveMarket(market));
-                return Ok(ApiResult.Ok(result));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Newtonsoft.Json.JsonException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(
-                    "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying."));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail(ex.Message));
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                return Content(HttpStatusCode.BadGateway, ApiResult.Fail("Could not parse the Amazon Ads page."));
-            }
-            catch (WebDriverException ex)
-            {
-                return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
-            }
+                var result = _manualKeywordCampaigns.Create(BrowserAgentRuntime.Browser, request, selectedMarket);
+                return (result, result.Succeeded, result.StatusCode, result.Content);
+            });
         }
 
         [HttpPost, Route("portfolios")]
@@ -400,6 +337,44 @@ namespace MyBrowserAgent.Controllers
                 return Content(HttpStatusCode.InternalServerError, ApiResult.Fail(ex.Message));
             }
         }
+
+        private IHttpActionResult SubmitCampaign(string endpoint, string market, AmazonAdsAccountInfo account,
+            Func<string, (object Result, bool Succeeded, int StatusCode, string Content)> submit)
+        {
+            var traceId = Guid.NewGuid().ToString("N");
+            try
+            {
+                var result = submit(market);
+                if (!result.Succeeded)
+                    CampaignTrace.Write(traceId, endpoint, market, account, result.StatusCode, result.Content);
+                return TraceResponse(HttpStatusCode.OK, ApiResult.Ok(result.Result), traceId);
+            }
+            catch (ArgumentException ex)
+            {
+                CampaignTrace.Write(traceId, endpoint, market, account, exception: ex);
+                return TraceResponse(HttpStatusCode.BadRequest, new HttpError(ex.Message), traceId);
+            }
+            catch (Exception ex) when (ex is Newtonsoft.Json.JsonException ||
+                ex is InvalidOperationException || ex is RegexMatchTimeoutException || ex is WebDriverException)
+            {
+                CampaignTrace.Write(traceId, endpoint, market, account, exception: ex);
+                var status = ex is WebDriverException ? HttpStatusCode.InternalServerError : HttpStatusCode.BadGateway;
+                var message = ex.Message;
+                if (ex is Newtonsoft.Json.JsonException)
+                    message = "Could not read the Amazon Ads campaign result. Check for a created campaign before retrying.";
+                else if (ex is RegexMatchTimeoutException)
+                    message = "Could not parse the Amazon Ads page.";
+                return TraceResponse(status, ApiResult.Fail(message), traceId);
+            }
+            catch (Exception ex)
+            {
+                CampaignTrace.Write(traceId, endpoint, market, account, exception: ex);
+                var response = Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
+                response.Headers.Add("X-Agent-Trace-Id", traceId);
+                return ResponseMessage(response);
+            }
+        }
+
         private static string ResolveMarket(string queryMarket, string bodyMarket = null)
         {
             return queryMarket ?? bodyMarket ?? "US";
