@@ -153,6 +153,7 @@ namespace DesktopController
                     FormData = formData,
                     FeatureFlags = featureFlags ?? new JObject()
                 }, TimeSpan.FromMinutes(2));
+            if (response.Data != null) response.Data.TraceId = response.TraceId;
             return response.Data;
         }
 
@@ -169,6 +170,7 @@ namespace DesktopController
                     FormData = formData,
                     FeatureFlags = featureFlags ?? new JObject()
                 }, TimeSpan.FromMinutes(2));
+            if (response.Data != null) response.Data.TraceId = response.TraceId;
             return response.Data;
         }
 
@@ -185,6 +187,7 @@ namespace DesktopController
                     FormData = formData,
                     FeatureFlags = featureFlags ?? new FeatureFlag()
                 }, TimeSpan.FromMinutes(2));
+            if (response.Data != null) response.Data.TraceId = response.TraceId;
             return response.Data;
         }
 
